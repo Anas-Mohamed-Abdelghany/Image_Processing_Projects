@@ -1,0 +1,5 @@
+F:/projects/Image_Processing_Projects/Task 1/build/CMakeFiles/CV_Assignment.dir
+F:/projects/Image_Processing_Projects/Task 1/build/CMakeFiles/edit_cache.dir
+F:/projects/Image_Processing_Projects/Task 1/build/CMakeFiles/rebuild_cache.dir
+F:/projects/Image_Processing_Projects/Task 1/build/CMakeFiles/CV_Assignment_autogen_timestamp_deps.dir
+F:/projects/Image_Processing_Projects/Task 1/build/CMakeFiles/CV_Assignment_autogen.dir

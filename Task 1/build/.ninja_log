@@ -1,0 +1,24 @@
+# ninja log v7
+8	1735	8131708153005147	CV_Assignment_autogen/timestamp	e464ba23bb496c48
+8	1735	8131708153005147	CV_Assignment_autogen/mocs_compilation.cpp	e464ba23bb496c48
+8	1735	8131708153005147	F:/projects/Image_Processing_Projects/Task 1/build/CV_Assignment_autogen/timestamp	e464ba23bb496c48
+8	1735	8131708153005147	F:/projects/Image_Processing_Projects/Task 1/build/CV_Assignment_autogen/mocs_compilation.cpp	e464ba23bb496c48
+2042	5717	8131708156944473	CMakeFiles/CV_Assignment.dir/src/services/Task1_NoiseService.cpp.obj	ab97e1cb63e21dc0
+2124	6311	8131708157764875	CMakeFiles/CV_Assignment.dir/src/services/Task2_LowPassFilterService.cpp.obj	ee3061d2ba1ea32e
+2239	6534	8131708158884091	CMakeFiles/CV_Assignment.dir/src/services/Task3_EdgeDetectionService.cpp.obj	f92dee46e61236a3
+1959	6789	8131708156115598	CMakeFiles/CV_Assignment.dir/src/services/Task0_ImageIOService.cpp.obj	9bff09d38c3c1930
+1805	7109	8131708154574741	CMakeFiles/CV_Assignment.dir/src/main.cpp.obj	ca8b6c12f2e25be9
+2375	7294	8131708160270258	CMakeFiles/CV_Assignment.dir/src/services/Task4_HistogramService.cpp.obj	cbab38ebd60a969d
+2524	7560	8131708161759640	CMakeFiles/CV_Assignment.dir/src/services/Task5_EqualizationService.cpp.obj	7ba9a76f2ebc9730
+2804	8064	8131708164555302	CMakeFiles/CV_Assignment.dir/src/services/Task6_NormalizationService.cpp.obj	cc93146d27f3d675
+1746	9493	8131708153978078	CMakeFiles/CV_Assignment.dir/CV_Assignment_autogen/mocs_compilation.cpp.obj	6f6ef7ae3b8a3d34
+5718	9509	8131708193695482	CMakeFiles/CV_Assignment.dir/src/services/Task7_ThresholdingService.cpp.obj	33335f5f2275a966
+6312	10117	8131708199637747	CMakeFiles/CV_Assignment.dir/src/services/Task8_ColorTransformationService.cpp.obj	3c6f5ed1e013b72e
+6534	10453	8131708201848386	CMakeFiles/CV_Assignment.dir/src/services/Task9_FrequencyFilterService.cpp.obj	c9375eb8168e769a
+1860	10689	8131708155111289	CMakeFiles/CV_Assignment.dir/src/backend/ImageProcessorController.cpp.obj	9e80c3ba47756950
+6789	10971	8131708204408258	CMakeFiles/CV_Assignment.dir/src/services/Task10_HybridImageService.cpp.obj	899f32c9d94919b3
+7109	12631	8131708207609160	CMakeFiles/CV_Assignment.dir/src/ui/ImageDisplayWidget.cpp.obj	f4974388073f9f67
+7560	12819	8131708212113896	CMakeFiles/CV_Assignment.dir/src/utils/QtCvBridge.cpp.obj	557bdeb1b3ff08a
+8064	13038	8131708217158653	CMakeFiles/CV_Assignment.dir/src/validation/InputValidator.cpp.obj	d88738d76bbaa498
+7294	14912	8131708209455876	CMakeFiles/CV_Assignment.dir/src/ui/MainWindow.cpp.obj	3dfb7495e8657b1a
+14913	15707	8131708285629851	CV_Assignment.exe	eb8a65175aa549fa
