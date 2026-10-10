@@ -4,6 +4,7 @@
 #include "services/TaskTypes.h"
 #include "ui/ImageDisplayWidget.h"
 
+#include <QCheckBox>
 #include <QComboBox>
 #include <QDoubleSpinBox>
 #include <QFileDialog>
@@ -12,6 +13,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QSignalBlocker>
 #include <QSpinBox>
 #include <QStatusBar>
 #include <QVBoxLayout>
@@ -26,7 +28,10 @@ MainWindow::MainWindow(QWidget* parent)
     , m_controller(new ImageProcessorController(this))
 {
     setWindowTitle(tr("CV Assignment - Image Processing Tasks"));
-    resize(1240, 780);
+    // These are LOGICAL pixels and Qt reports this desktop as 150%, so the
+    // window paints at 1.5x: 840x470 becomes ~1260x705 physical, which just
+    // fits a 1280x720 screen. Anything larger clips the control panel.
+    resize(840, 470);
 
     buildUi();
     connectSignals();
@@ -42,7 +47,27 @@ void MainWindow::buildUi()
     mainLayout->setContentsMargins(8, 8, 8, 8);
     mainLayout->setSpacing(8);
 
-    m_display = new ImageDisplayWidget(central);
+    // --- the three previews -------------------------------------------------
+    m_originalBox = new ImageDisplayWidget(tr("Original"),
+                                           tr("Open an image"), central);
+    m_resultBox2 = new ImageDisplayWidget(tr("Box 2"),
+                                          tr("Run a task,\nthen click\n\"Show in Box 2\""),
+                                          central);
+    m_resultBox3 = new ImageDisplayWidget(tr("Box 3"),
+                                          tr("Run a task,\nthen click\n\"Show in Box 3\""),
+                                          central);
+
+    // Mark the default target box so it is obvious where a result will go.
+    m_resultBox2->setTitle(tr("Box 2  (active)"));
+
+    auto* previewArea = new QWidget(central);
+    auto* previewLayout = new QHBoxLayout(previewArea);
+    previewLayout->setContentsMargins(0, 0, 0, 0);
+    previewLayout->setSpacing(6);
+
+    previewLayout->addWidget(m_originalBox, 1);
+    previewLayout->addWidget(m_resultBox2, 1);
+    previewLayout->addWidget(m_resultBox3, 1);
 
     auto* panel = new QWidget(central);
     auto* panelLayout = new QVBoxLayout(panel);
@@ -55,7 +80,7 @@ void MainWindow::buildUi()
     panelLayout->addWidget(createActionGroup());
     panelLayout->addStretch(1);
 
-    mainLayout->addWidget(m_display, 1);
+    mainLayout->addWidget(previewArea, 1);
     mainLayout->addWidget(panel, 0);
 
     setCentralWidget(central);
@@ -79,32 +104,71 @@ QWidget* MainWindow::createFileGroup()
 
 QWidget* MainWindow::createOperationGroup()
 {
-    auto* group = new QGroupBox(tr("Task / Operation"), this);
-    auto* layout = new QVBoxLayout(group);
+    auto* group = new QGroupBox(tr("Tasks"), this);
+    auto* grid = new QGridLayout(group);
+    grid->setHorizontalSpacing(6);
+    grid->setVerticalSpacing(4);
 
-    m_operationCombo = new QComboBox(group);
-    m_operationCombo->addItem(tr("Task 0  -  Read / Show Image"), static_cast<int>(Operation::ShowOriginal));
-    m_operationCombo->addItem(tr("Task 1  -  Uniform Noise"), static_cast<int>(Operation::UniformNoise));
-    m_operationCombo->addItem(tr("Task 1  -  Gaussian Noise"), static_cast<int>(Operation::GaussianNoise));
-    m_operationCombo->addItem(tr("Task 1  -  Salt and Pepper Noise"), static_cast<int>(Operation::SaltPepperNoise));
-    m_operationCombo->addItem(tr("Task 2  -  Average Filter"), static_cast<int>(Operation::AverageFilter));
-    m_operationCombo->addItem(tr("Task 2  -  Gaussian Filter"), static_cast<int>(Operation::GaussianFilter));
-    m_operationCombo->addItem(tr("Task 2  -  Median Filter"), static_cast<int>(Operation::MedianFilter));
-    m_operationCombo->addItem(tr("Task 3  -  Sobel Edges"), static_cast<int>(Operation::SobelEdges));
-    m_operationCombo->addItem(tr("Task 3  -  Roberts Edges"), static_cast<int>(Operation::RobertsEdges));
-    m_operationCombo->addItem(tr("Task 3  -  Prewitt Edges"), static_cast<int>(Operation::PrewittEdges));
-    m_operationCombo->addItem(tr("Task 3  -  Canny Edges"), static_cast<int>(Operation::CannyEdges));
-    m_operationCombo->addItem(tr("Task 4  -  Histogram + CDF"), static_cast<int>(Operation::Histogram));
-    m_operationCombo->addItem(tr("Task 5  -  Histogram Equalization"), static_cast<int>(Operation::Equalization));
-    m_operationCombo->addItem(tr("Task 6  -  Normalization"), static_cast<int>(Operation::Normalization));
-    m_operationCombo->addItem(tr("Task 7  -  Thresholding"), static_cast<int>(Operation::Thresholding));
-    m_operationCombo->addItem(tr("Task 8  -  RGB to Grayscale"), static_cast<int>(Operation::GrayscaleConversion));
-    m_operationCombo->addItem(tr("Task 8  -  R/G/B Channel Histograms + CDF"), static_cast<int>(Operation::ChannelHistograms));
-    m_operationCombo->addItem(tr("Task 9  -  Frequency Low Pass"), static_cast<int>(Operation::FrequencyLowPass));
-    m_operationCombo->addItem(tr("Task 9  -  Frequency High Pass"), static_cast<int>(Operation::FrequencyHighPass));
-    m_operationCombo->addItem(tr("Task 10 -  Hybrid Image"), static_cast<int>(Operation::HybridImage));
+    // One drop down per task group. The short label keeps the panel narrow,
+    // the task number is shown inside the entries ("Sobel").
+    struct Group {
+        QString label;
+        QVector<QPair<QString, Operation>> entries;
+    };
 
-    layout->addWidget(m_operationCombo);
+    const QVector<Group> groups = {
+        {tr("Noise"), {
+            {tr("Uniform "), Operation::UniformNoise},
+            {tr("Gaussian "), Operation::GaussianNoise},
+            {tr("Salt & Pepper "), Operation::SaltPepperNoise}}},
+        {tr("Filter"), {
+            {tr("Average "), Operation::AverageFilter},
+            {tr("Gaussian "), Operation::GaussianFilter},
+            {tr("Median "), Operation::MedianFilter}}},
+        {tr("Edges"), {
+            {tr("Sobel "), Operation::SobelEdges},
+            {tr("Roberts "), Operation::RobertsEdges},
+            {tr("Prewitt "), Operation::PrewittEdges},
+            {tr("Canny "), Operation::CannyEdges}}},
+        {tr("Color"), {
+            {tr("RGB -> Gray"), Operation::GrayscaleConversion},
+            {tr("Channel Hist + CDF"), Operation::ChannelHistograms}}},
+        {tr("Frequency"), {
+            {tr("Low Pass"), Operation::FrequencyLowPass},
+            {tr("High Pass"), Operation::FrequencyHighPass}}},
+        {tr("Other"), {
+            {tr("Histogram"), Operation::Histogram},
+            {tr("CDF Curve"), Operation::CumulativeCurve},
+            {tr("Equalization"), Operation::Equalization},
+            {tr("Normalization"), Operation::Normalization},
+            {tr("Thresholding"), Operation::Thresholding},
+            {tr("Hybrid Image"), Operation::HybridImage}}},
+    };
+
+    for (int i = 0; i < groups.size(); ++i) {
+        const int row = i;
+        const Group& entry = groups.at(i);
+
+        auto* label = new QLabel(entry.label, group);
+        auto* combo = new QComboBox(group);
+
+        // Index 0 is the "nothing selected" placeholder.
+        combo->addItem(tr("(select a task)"), -1);
+        for (const auto& item : entry.entries) {
+            combo->addItem(item.first, static_cast<int>(item.second));
+        }
+        combo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+        grid->addWidget(label, row, 0);
+        grid->addWidget(combo, row, 1);
+
+        m_taskCombos.append(combo);
+        connect(combo, &QComboBox::currentIndexChanged,
+                this, &MainWindow::onTaskSelectionChanged);
+    }
+
+    grid->setColumnStretch(0, 0);
+    grid->setColumnStretch(1, 1);
     return group;
 }
 
@@ -160,6 +224,7 @@ QWidget* MainWindow::createParameterGroup()
     m_directionCombo = new QComboBox(group);
     m_directionCombo->addItem(tr("X direction"), static_cast<int>(Direction::X));
     m_directionCombo->addItem(tr("Y direction"), static_cast<int>(Direction::Y));
+    m_directionCombo->addItem(tr("X,Y directions"), static_cast<int>(Direction::Both));
     addParameterRow(grid, 6, QStringLiteral("direction"), tr("Direction"), m_directionCombo);
 
     // Row 7 - Canny low threshold (Task 3)
@@ -209,9 +274,28 @@ QWidget* MainWindow::createActionGroup()
     m_originalButton = new QPushButton(tr("Show Original"), group);
     m_resetButton = new QPushButton(tr("Reset to Original"), group);
 
+    // Which preview box receives the next result.
+    m_showInBox2Button = new QPushButton(tr("Show Result in Box 2"), group);
+    m_showInBox3Button = new QPushButton(tr("Show Result in Box 3"), group);
+    m_showInBox2Button->setCheckable(true);
+    m_showInBox3Button->setCheckable(true);
+    m_showInBox2Button->setChecked(true);
+
+    // Every operation starts from the loaded image again, so two results can
+    // be compared fairly (uncheck to chain the operations instead).
+    m_resetBeforeOpCheck = new QCheckBox(tr("Start each operation from the original"), group);
+    m_resetBeforeOpCheck->setChecked(true);
+
     layout->addWidget(m_runButton, 0, 0, 1, 2);
     layout->addWidget(m_originalButton, 1, 0);
     layout->addWidget(m_resetButton, 1, 1);
+
+    auto* targetLabel = new QLabel(tr("Next result goes to:"), group);
+    layout->addWidget(targetLabel, 2, 0, 1, 2);
+    layout->addWidget(m_showInBox2Button, 3, 0);
+    layout->addWidget(m_showInBox3Button, 3, 1);
+
+    layout->addWidget(m_resetBeforeOpCheck, 4, 0, 1, 2);
 
     return group;
 }
@@ -226,9 +310,21 @@ void MainWindow::connectSignals()
     connect(m_originalButton, &QPushButton::clicked, this, &MainWindow::showOriginal);
     connect(m_resetButton, &QPushButton::clicked, this, &MainWindow::resetToOriginal);
 
-    // Operation selector -> parameter visibility
-    connect(m_operationCombo, &QComboBox::currentIndexChanged,
-            this, &MainWindow::onOperationChanged);
+    // Destination selector: only one of the two boxes can be the target.
+    // The buttons are checkable, so a click on the active one keeps it.
+    connect(m_showInBox2Button, &QPushButton::clicked, this, [this]() {
+        showResultInBox2();
+    });
+    connect(m_showInBox3Button, &QPushButton::clicked, this, [this]() {
+        showResultInBox3();
+    });
+    connect(m_resetBeforeOpCheck, &QCheckBox::toggled, this, [this](bool checked) {
+        statusBar()->showMessage(checked
+            ? tr("Each operation now starts from the original image.")
+            : tr("Operations are now chained onto the previous result."), 4000);
+    });
+
+    // The task drop downs are connected inside createOperationGroup().
 
     // Controller -> this window (errors + status) and the display (results)
     connect(m_controller, &ImageProcessorController::resultReady,
@@ -264,9 +360,8 @@ void MainWindow::showParameters(const QStringList& keys)
 
 void MainWindow::updateParameterVisibility()
 {
-    const Operation op = static_cast<Operation>(m_operationCombo->currentData().toInt());
-
-    switch (op) {
+    switch (m_activeOperation) {
+    case Operation::None:
     case Operation::ShowOriginal:
         showParameters({});
         break;
@@ -295,6 +390,7 @@ void MainWindow::updateParameterVisibility()
         showParameters({QStringLiteral("cannyLow"), QStringLiteral("cannyHigh")});
         break;
     case Operation::Histogram:
+    case Operation::CumulativeCurve:
     case Operation::Equalization:
     case Operation::Normalization:
     case Operation::GrayscaleConversion:
@@ -326,9 +422,13 @@ void MainWindow::openImage()
     }
 
     m_pendingStatus = tr("Loaded: %1").arg(path);
+
+    // The freshly loaded image belongs into the original box.
+    m_routeToOriginal = true;
     if (!m_controller->loadImage(path)) {
         m_pendingStatus.clear();
     }
+    m_routeToOriginal = false;
 }
 
 void MainWindow::openSecondImage()
@@ -361,7 +461,12 @@ void MainWindow::saveResult()
 
 void MainWindow::runCurrentOperation()
 {
-    const Operation op = static_cast<Operation>(m_operationCombo->currentData().toInt());
+    const Operation op = m_activeOperation;
+
+    if (op == Operation::None) {
+        statusBar()->showMessage(tr("Pick a task from one of the drop downs first."), 5000);
+        return;
+    }
 
     if (op == Operation::ShowOriginal) {
         showOriginal();
@@ -370,12 +475,31 @@ void MainWindow::runCurrentOperation()
 
     // If the controller fails it emits errorOccurred first, which clears this
     // again - so the status only ever shows success.
-    m_pendingStatus = tr("Applied: %1").arg(m_operationCombo->currentText());
+    QString operationName;
+    for (QComboBox* combo : m_taskCombos) {
+        const int index = combo->findData(static_cast<int>(op));
+        if (index >= 0) {
+            operationName = combo->itemText(index);
+            break;
+        }
+    }
+    m_pendingStatus = tr("Applied: %1").arg(operationName);
+
+    // Comparing two variants (e.g. Sobel X vs Sobel Y) only makes sense when
+    // both are computed from the original image, so by default the chain is
+    // discarded before every operation.
+    if (m_resetBeforeOpCheck->isChecked() && m_controller->hasImage()) {
+        // The reset publishes the original image again - keep it in box 1.
+        m_routeToOriginal = true;
+        m_controller->resetToOriginal();
+        m_routeToOriginal = false;
+    }
 
     const int ksize = m_kernelCombo->currentData().toInt();
     const Direction direction = static_cast<Direction>(m_directionCombo->currentData().toInt());
 
     switch (op) {
+    case Operation::None:
     case Operation::ShowOriginal:
         break; // handled above
 
@@ -420,6 +544,10 @@ void MainWindow::runCurrentOperation()
         m_controller->showHistogram();
         break;
 
+    case Operation::CumulativeCurve:
+        m_controller->showCumulativeCurve();
+        break;
+
     // Task 5
     case Operation::Equalization:
         m_controller->applyEqualization();
@@ -461,24 +589,120 @@ void MainWindow::runCurrentOperation()
 void MainWindow::showOriginal()
 {
     m_pendingStatus = tr("Showing the original image");
+    m_routeToOriginal = true;
     m_controller->showOriginal();
+    m_routeToOriginal = false;
 }
 
 void MainWindow::resetToOriginal()
 {
     m_pendingStatus = tr("Reset - all operations discarded");
+    m_routeToOriginal = true;
     m_controller->resetToOriginal();
+    m_routeToOriginal = false;
 }
 
-void MainWindow::onOperationChanged(int index)
+// ---------------------------------------------------------------------------
+// Result boxes
+// ---------------------------------------------------------------------------
+
+void MainWindow::showResultInBox2()
 {
-    Q_UNUSED(index)
+    m_activeResultBox = ResultBox::Box2;
+
+    // Exactly one of the two buttons is checked at a time.
+    m_showInBox2Button->setChecked(true);
+    m_showInBox3Button->setChecked(false);
+    m_resultBox2->setTitle(tr("Box 2  (active)"));
+    m_resultBox3->setTitle(tr("Box 3"));
+
+    if (m_lastResult.isNull()) {
+        statusBar()->showMessage(tr("No result yet - run a task first."), 4000);
+    }
+
+    displayResultInActiveBox();
+}
+
+void MainWindow::showResultInBox3()
+{
+    m_activeResultBox = ResultBox::Box3;
+
+    m_showInBox2Button->setChecked(false);
+    m_showInBox3Button->setChecked(true);
+    m_resultBox2->setTitle(tr("Box 2"));
+    m_resultBox3->setTitle(tr("Box 3  (active)"));
+
+    if (m_lastResult.isNull()) {
+        statusBar()->showMessage(tr("No result yet - run a task first."), 4000);
+    }
+
+    displayResultInActiveBox();
+}
+
+void MainWindow::displayResultInActiveBox()
+{
+    if (m_lastResult.isNull()) {
+        return;
+    }
+
+    (m_activeResultBox == ResultBox::Box2 ? m_resultBox2 : m_resultBox3)
+        ->setImage(m_lastResult);
+}
+
+void MainWindow::onTaskSelectionChanged(int index)
+{
+    auto* combo = qobject_cast<QComboBox*>(sender());
+    if (combo == nullptr) {
+        return;
+    }
+
+    const int value = combo->itemData(index).toInt();
+    if (value < 0) {
+        return; // "(select a task)" placeholder - nothing becomes active
+    }
+
+    selectOperation(static_cast<Operation>(value), combo);
+}
+
+void MainWindow::selectOperation(Operation operation, QComboBox* source)
+{
+    m_activeOperation = operation;
+
+    // Exactly one drop down may show the active task: reset the others back
+    // to the placeholder. Signals are blocked so these resets do not come
+    // back into onTaskSelectionChanged().
+    for (QComboBox* combo : m_taskCombos) {
+        if (combo == source) {
+            continue;
+        }
+        const QSignalBlocker blocker(combo);
+        combo->setCurrentIndex(0);
+    }
+
     updateParameterVisibility();
 }
 
 void MainWindow::onResultReady(const QImage& image)
 {
-    m_display->setImage(image);
+    if (m_routeToOriginal) {
+        // Loaded / "Show Original" / "Reset" - box 1 keeps the source image,
+        // which is also the chain's starting point again.
+        m_originalBox->setImage(image);
+    } else {
+        // A task result: remember it and show it in the selected box.
+        m_lastResult = image;
+        displayResultInActiveBox();
+
+        if (!m_pendingStatus.isEmpty()) {
+            statusBar()->showMessage(m_pendingStatus + tr("  (shown in %1)")
+                                                     .arg(m_activeResultBox == ResultBox::Box2
+                                                              ? tr("Box 2")
+                                                              : tr("Box 3")),
+                                     4000);
+            m_pendingStatus.clear();
+        }
+        return;
+    }
 
     if (!m_pendingStatus.isEmpty()) {
         statusBar()->showMessage(m_pendingStatus, 4000);

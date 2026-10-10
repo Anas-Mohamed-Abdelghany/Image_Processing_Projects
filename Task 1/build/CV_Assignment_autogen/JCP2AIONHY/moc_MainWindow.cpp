@@ -46,13 +46,15 @@ template <> constexpr inline auto MainWindow::qt_create_metaobjectdata<qt_meta_t
         "runCurrentOperation",
         "showOriginal",
         "resetToOriginal",
-        "onOperationChanged",
+        "onTaskSelectionChanged",
         "index",
         "onResultReady",
         "QImage",
         "image",
         "onErrorOccurred",
-        "message"
+        "message",
+        "showResultInBox2",
+        "showResultInBox3"
     };
 
     QtMocHelpers::UintData qt_methods {
@@ -68,7 +70,7 @@ template <> constexpr inline auto MainWindow::qt_create_metaobjectdata<qt_meta_t
         QtMocHelpers::SlotData<void()>(6, 2, QMC::AccessPrivate, QMetaType::Void),
         // Slot 'resetToOriginal'
         QtMocHelpers::SlotData<void()>(7, 2, QMC::AccessPrivate, QMetaType::Void),
-        // Slot 'onOperationChanged'
+        // Slot 'onTaskSelectionChanged'
         QtMocHelpers::SlotData<void(int)>(8, 2, QMC::AccessPrivate, QMetaType::Void, {{
             { QMetaType::Int, 9 },
         }}),
@@ -80,6 +82,10 @@ template <> constexpr inline auto MainWindow::qt_create_metaobjectdata<qt_meta_t
         QtMocHelpers::SlotData<void(const QString &)>(13, 2, QMC::AccessPrivate, QMetaType::Void, {{
             { QMetaType::QString, 14 },
         }}),
+        // Slot 'showResultInBox2'
+        QtMocHelpers::SlotData<void()>(15, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'showResultInBox3'
+        QtMocHelpers::SlotData<void()>(16, 2, QMC::AccessPrivate, QMetaType::Void),
     };
     QtMocHelpers::UintData qt_properties {
     };
@@ -109,9 +115,11 @@ void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         case 3: _t->runCurrentOperation(); break;
         case 4: _t->showOriginal(); break;
         case 5: _t->resetToOriginal(); break;
-        case 6: _t->onOperationChanged((*reinterpret_cast<std::add_pointer_t<int>>(_a[1]))); break;
+        case 6: _t->onTaskSelectionChanged((*reinterpret_cast<std::add_pointer_t<int>>(_a[1]))); break;
         case 7: _t->onResultReady((*reinterpret_cast<std::add_pointer_t<QImage>>(_a[1]))); break;
         case 8: _t->onErrorOccurred((*reinterpret_cast<std::add_pointer_t<QString>>(_a[1]))); break;
+        case 9: _t->showResultInBox2(); break;
+        case 10: _t->showResultInBox3(); break;
         default: ;
         }
     }
@@ -136,14 +144,14 @@ int MainWindow::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 9)
+        if (_id < 11)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 9;
+        _id -= 11;
     }
     if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 9)
+        if (_id < 11)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 9;
+        _id -= 11;
     }
     return _id;
 }

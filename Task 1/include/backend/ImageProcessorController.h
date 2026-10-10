@@ -54,7 +54,8 @@ public:
     void applyCanny(double lowThreshold, double highThreshold);
 
     // --- Task 4 -------------------------------------------------------------
-    void showHistogram(); // histogram + cumulative curve side by side
+    void showHistogram();          // bar chart of the gray level distribution
+    void showCumulativeCurve();    // the CDF curve on its own
 
     // --- Task 5 -------------------------------------------------------------
     void applyEqualization();

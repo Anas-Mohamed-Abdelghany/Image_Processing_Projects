@@ -18,6 +18,30 @@
 
 namespace {
 
+// Stamps a short label into the top-left corner so the halves of a
+// side-by-side result stay identifiable.
+void labelResult(cv::Mat& image, const char* text)
+{
+    if (image.empty()) {
+        return;
+    }
+    // The services return single channel 8U plots / gradients; copy to BGR so
+    // the label is legible on both.
+    cv::Mat canvas = (image.channels() == 1) ? cv::Mat() : image;
+    if (image.channels() == 1) {
+        cv::cvtColor(image, canvas, cv::COLOR_GRAY2BGR);
+    }
+
+    const int pad = 6;
+    int baseline = 0;
+    const cv::Size size = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, 0.55, 1, &baseline);
+    cv::rectangle(canvas, cv::Rect(0, 0, size.width + pad * 2, size.height + pad * 2),
+                  cv::Scalar(0, 0, 0), cv::FILLED);
+    cv::putText(canvas, text, cv::Point(pad, size.height + pad),
+                cv::FONT_HERSHEY_SIMPLEX, 0.55, cv::Scalar(255, 255, 255), 1, cv::LINE_AA);
+    image = canvas;
+}
+
 // Puts two result images side by side, falling back to whichever is available.
 cv::Mat concatHorizontal(const cv::Mat& left, const cv::Mat& right)
 {
@@ -227,6 +251,33 @@ void ImageProcessorController::applyEdges(EdgeMethod method, Direction direction
         break;
     }
 
+    if (direction == Direction::Both) {
+        // The services only produce one direction at a time (anything that is
+        // not Direction::X is treated as Y), so run each operator twice and
+        // put the two hand-written convolutions next to each other.
+        cv::Mat firstHalf;
+        cv::Mat secondHalf;
+
+        switch (method) {
+        case EdgeMethod::Sobel:
+            firstHalf  = Task3_EdgeDetectionService::sobel(m_currentImage, Direction::X);
+            secondHalf = Task3_EdgeDetectionService::sobel(m_currentImage, Direction::Y);
+            break;
+        case EdgeMethod::Roberts:
+            firstHalf  = Task3_EdgeDetectionService::roberts(m_currentImage, Direction::X);
+            secondHalf = Task3_EdgeDetectionService::roberts(m_currentImage, Direction::Y);
+            break;
+        case EdgeMethod::Prewitt:
+            firstHalf  = Task3_EdgeDetectionService::prewitt(m_currentImage, Direction::X);
+            secondHalf = Task3_EdgeDetectionService::prewitt(m_currentImage, Direction::Y);
+            break;
+        }
+
+        labelResult(firstHalf, "X");
+        labelResult(secondHalf, "Y");
+        edges = concatHorizontal(firstHalf, secondHalf);
+    }
+
     commit(edges, tr("Task 3 (edge detection)"));
 }
 
@@ -258,9 +309,20 @@ void ImageProcessorController::showHistogram()
         return;
     }
 
-    const cv::Mat histogram = Task4_HistogramService::drawHistogram(m_currentImage);
-    const cv::Mat curve = Task4_HistogramService::drawCumulativeCurve(m_currentImage);
-    commit(concatHorizontal(histogram, curve), tr("Task 4 (histogram)"));
+    commit(Task4_HistogramService::drawHistogram(m_currentImage),
+           tr("Task 4 (histogram)"));
+}
+
+void ImageProcessorController::showCumulativeCurve()
+{
+    QString error;
+    if (!InputValidator::isValidImage(m_currentImage, tr("Current image"), &error)) {
+        emit errorOccurred(error);
+        return;
+    }
+
+    commit(Task4_HistogramService::drawCumulativeCurve(m_currentImage),
+           tr("Task 4 (CDF)"));
 }
 
 // ---------------------------------------------------------------------------

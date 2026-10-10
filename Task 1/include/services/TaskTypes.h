@@ -14,9 +14,13 @@ enum class EdgeMethod {
 };
 
 // Gradient direction of an edge operator:
-//   X -> derivative along the X axis (horizontal gradient, vertical edges)
-//   Y -> derivative along the Y axis (vertical gradient, horizontal edges)
+//   X    -> derivative along the X axis (horizontal gradient, vertical edges)
+//   Y    -> derivative along the Y axis (vertical gradient, horizontal edges)
+//   Both -> X and Y computed separately and returned side by side, so the two
+//           directions can be compared in one preview. Both halves still come
+//           from the hand-written convolution, not from a magnitude shortcut.
 enum class Direction {
     X,
-    Y
+    Y,
+    Both
 };

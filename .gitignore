@@ -1,0 +1,83 @@
+# ---------------------------------------------------------------------------
+# CMake / Ninja build output
+# ---------------------------------------------------------------------------
+build/
+cmake-build-*/
+out/
+CMakeUserPresets.json
+
+# In-source CMake litter (should not appear, but cheap to cover)
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+install_manifest.txt
+compile_commands.json
+_deps/
+
+# Ninja
+.ninja_deps
+.ninja_log
+build.ninja
+rules.ninja
+
+# Qt / moc / uic / rcc
+*_autogen/
+moc_*.cpp
+ui_*.h
+qrc_*.cpp
+*.qmlc
+*.jsc
+
+# ---------------------------------------------------------------------------
+# Compiled objects and binaries
+# ---------------------------------------------------------------------------
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.so.*
+*.dylib
+*.dll
+*.dll.a
+*.exe
+*.exp
+*.ilk
+*.pdb
+*.idb
+*.tlog
+*.lastbuildstate
+
+# ---------------------------------------------------------------------------
+# Qt Creator / IDE
+# ---------------------------------------------------------------------------
+*.pro.user
+*.pro.user.*
+*.qbs.user
+*.qbs.user.*
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.vs/
+.vscode/
+.idea/
+*.swp
+*~
+
+# ---------------------------------------------------------------------------
+# OS junk
+# ---------------------------------------------------------------------------
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# ---------------------------------------------------------------------------
+# Logs and dumps
+# ---------------------------------------------------------------------------
+*.log
+*.tmp
+core
+core.*

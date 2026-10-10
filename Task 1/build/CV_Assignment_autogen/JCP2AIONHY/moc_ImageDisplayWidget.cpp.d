@@ -212,6 +212,7 @@ F:/projects/Image_Processing_Projects/Task\ 1/build/CV_Assignment_autogen/JCP2AI
   P:/Setup/MSYS2/ucrt64/include/pthread_signal.h \
   P:/Setup/MSYS2/ucrt64/include/pthread_time.h \
   P:/Setup/MSYS2/ucrt64/include/pthread_unistd.h \
+  P:/Setup/MSYS2/ucrt64/include/qt6/QtCore/QString \
   P:/Setup/MSYS2/ucrt64/include/qt6/QtCore/q17memory.h \
   P:/Setup/MSYS2/ucrt64/include/qt6/QtCore/q20bit.h \
   P:/Setup/MSYS2/ucrt64/include/qt6/QtCore/q20functional.h \

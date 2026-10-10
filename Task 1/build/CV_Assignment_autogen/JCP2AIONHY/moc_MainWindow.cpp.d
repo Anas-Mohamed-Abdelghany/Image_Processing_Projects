@@ -214,6 +214,7 @@ F:/projects/Image_Processing_Projects/Task\ 1/build/CV_Assignment_autogen/JCP2AI
   P:/Setup/MSYS2/ucrt64/include/pthread_unistd.h \
   P:/Setup/MSYS2/ucrt64/include/qt6/QtCore/QMap \
   P:/Setup/MSYS2/ucrt64/include/qt6/QtCore/QStringList \
+  P:/Setup/MSYS2/ucrt64/include/qt6/QtCore/QVector \
   P:/Setup/MSYS2/ucrt64/include/qt6/QtCore/q17memory.h \
   P:/Setup/MSYS2/ucrt64/include/qt6/QtCore/q20bit.h \
   P:/Setup/MSYS2/ucrt64/include/qt6/QtCore/q20functional.h \
@@ -339,6 +340,7 @@ F:/projects/Image_Processing_Projects/Task\ 1/build/CV_Assignment_autogen/JCP2AI
   P:/Setup/MSYS2/ucrt64/include/qt6/QtCore/qutf8stringview.h \
   P:/Setup/MSYS2/ucrt64/include/qt6/QtCore/qvariant.h \
   P:/Setup/MSYS2/ucrt64/include/qt6/QtCore/qvarlengtharray.h \
+  P:/Setup/MSYS2/ucrt64/include/qt6/QtCore/qvector.h \
   P:/Setup/MSYS2/ucrt64/include/qt6/QtCore/qversiontagging.h \
   P:/Setup/MSYS2/ucrt64/include/qt6/QtCore/qxptype_traits.h \
   P:/Setup/MSYS2/ucrt64/include/qt6/QtCore/qyieldcpu.h \
