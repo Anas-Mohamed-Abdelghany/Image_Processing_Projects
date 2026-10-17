@@ -1,5 +1,6 @@
 #include "services/Task8_ColorTransformationService.h"
 #include <algorithm>
+#include <opencv2/imgproc.hpp>
 
 // ============================================================================
 // Task 8 - Color Processing & Channel Histograms               [TODO: Teammate]
@@ -8,6 +9,7 @@
 // ============================================================================
 cv::Mat Task8_ColorTransformationService::toGrayscale(const cv::Mat& image)
 {
+ 
     if (image.empty()) {
         return {};
     }
@@ -15,20 +17,30 @@ cv::Mat Task8_ColorTransformationService::toGrayscale(const cv::Mat& image)
     if (image.type() == CV_8UC1) {
         return image.clone();
     }
-    // Support 3-channel color images
-    if (image.type() != CV_8UC3) {
+    // Support 3-channel and 4-channel color images
+    if (image.type() != CV_8UC3 && image.type() != CV_8UC4) {
         return {};
     }
             // Create a new grayscale image with the same dimensions as the input image
         cv::Mat grayImage(image.rows, image.cols, CV_8UC1); 
     for (int i = 0; i < image.rows; i++) {
         for (int j = 0; j < image.cols; j++) {
+            double blue, green, red;
             // Get the BGR pixel values from the input image
-            cv::Vec3b bgrPixel = image.at<cv::Vec3b>(i, j);
-            double blue = bgrPixel[0];
-            double green = bgrPixel[1];
-            double red = bgrPixel[2];
-
+            if((image.type() == CV_8UC3)) {
+                cv::Vec3b Pixel = image.at<cv::Vec3b>(i, j);
+                blue = Pixel[0];
+                green = Pixel[1];
+                red = Pixel[2];
+            } else if(image.type() == CV_8UC4) {
+                cv::Vec4b Pixel = image.at<cv::Vec4b>(i, j);
+                blue = Pixel[0];
+                green = Pixel[1];
+                red = Pixel[2];
+            } else {
+                // If the image is not of type CV_8UC3 or CV_8UC4, return an empty matrix
+                return {};
+            }
             // Convert to grayscale using the luminosity method
             double gray = 0.299 * red + 0.587 * green + 0.114 * blue;
 
