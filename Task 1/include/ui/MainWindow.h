@@ -100,6 +100,7 @@ private:
         Thresholding,        // Task 7
         GrayscaleConversion, // Task 8
         ChannelHistograms,   // Task 8
+        ChannelCumulativeCurves, // Task 8
         FrequencyLowPass,    // Task 9
         FrequencyHighPass,   // Task 9
         HybridImage          // Task 10

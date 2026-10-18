@@ -68,7 +68,8 @@ public:
 
     // --- Task 8 -------------------------------------------------------------
     void applyGrayscaleConversion();
-    void showChannelHistograms(); // R/G/B histograms + cumulative curves
+    void showChannelHistograms();      // R/G/B histograms
+    void showChannelCumulativeCurves(); // R/G/B cumulative curves (CDF)
 
     // --- Task 9 -------------------------------------------------------------
     void applyFrequencyLowPass(double cutoffRadius);

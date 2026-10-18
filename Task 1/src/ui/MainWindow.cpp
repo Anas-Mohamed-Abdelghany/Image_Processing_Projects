@@ -63,14 +63,27 @@ void MainWindow::buildUi()
     // Mark the default target box so it is obvious where a result will go.
     m_resultBox2->setTitle(tr("Box 2  (active)"));
 
+    // Layout: Original on top (full width), then Box 2 and Box 3 side by
+    // side in one row underneath it.
+    // The shared ImageDisplayWidget caps are tuned for three side-by-side
+    // previews and would leave dead space in this column, so lift them for
+    // these three (the HybridPanel previews keep the small caps).
+    for (auto* box : {m_originalBox, m_resultBox2, m_resultBox3}) {
+        box->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+    }
+
     auto* previewArea = new QWidget(central);
-    auto* previewLayout = new QHBoxLayout(previewArea);
+    auto* previewLayout = new QVBoxLayout(previewArea);
     previewLayout->setContentsMargins(0, 0, 0, 0);
     previewLayout->setSpacing(6);
 
-    previewLayout->addWidget(m_originalBox, 1);
-    previewLayout->addWidget(m_resultBox2, 1);
-    previewLayout->addWidget(m_resultBox3, 1);
+    previewLayout->addWidget(m_originalBox, 1);   // on top
+
+    auto* resultRow = new QHBoxLayout();
+    resultRow->setSpacing(6);
+    resultRow->addWidget(m_resultBox2, 1);
+    resultRow->addWidget(m_resultBox3, 1);
+    previewLayout->addLayout(resultRow, 1);   // equal height to the original
 
     auto* panel = new QWidget(central);
     auto* panelLayout = new QVBoxLayout(panel);
@@ -111,9 +124,9 @@ QWidget* MainWindow::createFileGroup()
     auto* group = new QGroupBox(tr("File"), this);
     auto* layout = new QGridLayout(group);
 
-    m_openButton = new QPushButton(tr("Open Image..."), group);
-    m_openSecondButton = new QPushButton(tr("Open Second Image (Task 10)..."), group);
-    m_saveButton = new QPushButton(tr("Save Result..."), group);
+    m_openButton = new QPushButton(tr("Open Image"), group);
+    m_openSecondButton = new QPushButton(tr("Open Second Image (Hybrid)"), group);
+    m_saveButton = new QPushButton(tr("Save Result"), group);
 
     layout->addWidget(m_openButton, 0, 0);
     layout->addWidget(m_openSecondButton, 0, 1);
@@ -151,8 +164,9 @@ QWidget* MainWindow::createOperationGroup()
             {tr("Prewitt "), Operation::PrewittEdges},
             {tr("Canny "), Operation::CannyEdges}}},
         {tr("Color"), {
-            {tr("RGB -> Gray"), Operation::GrayscaleConversion},
-            {tr("Channel Hist + CDF"), Operation::ChannelHistograms}}},
+            {tr("Transfer to Grayscale"), Operation::GrayscaleConversion},
+            {tr("Channel Hist"), Operation::ChannelHistograms},
+            {tr("Channel CDF"), Operation::ChannelCumulativeCurves}}},
         {tr("Frequency"), {
             {tr("Low Pass"), Operation::FrequencyLowPass},
             {tr("High Pass"), Operation::FrequencyHighPass}}},
@@ -291,12 +305,9 @@ QWidget* MainWindow::createActionGroup()
     m_runButton = new QPushButton(tr("Run Operation"), group);
     m_runButton->setDefault(true);
 
-    m_originalButton = new QPushButton(tr("Show Original"), group);
-    m_resetButton = new QPushButton(tr("Reset to Original"), group);
-
     // Which preview box receives the next result.
-    m_showInBox2Button = new QPushButton(tr("Show Result in Box 2"), group);
-    m_showInBox3Button = new QPushButton(tr("Show Result in Box 3"), group);
+    m_showInBox2Button = new QPushButton(tr("Select Box 2"), group);
+    m_showInBox3Button = new QPushButton(tr("Select Box 3"), group);
     m_showInBox2Button->setCheckable(true);
     m_showInBox3Button->setCheckable(true);
     m_showInBox2Button->setChecked(true);
@@ -306,14 +317,16 @@ QWidget* MainWindow::createActionGroup()
     m_resetBeforeOpCheck = new QCheckBox(tr("Start each operation from the original"), group);
     m_resetBeforeOpCheck->setChecked(true);
 
-    layout->addWidget(m_runButton, 0, 0, 1, 2);
-    layout->addWidget(m_originalButton, 1, 0);
-    layout->addWidget(m_resetButton, 1, 1);
-
+    // Pick the target box first, then run - so the selector sits above the
+    // Run button and the flow reads top to bottom.
     auto* targetLabel = new QLabel(tr("Next result goes to:"), group);
-    layout->addWidget(targetLabel, 2, 0, 1, 2);
-    layout->addWidget(m_showInBox2Button, 3, 0);
-    layout->addWidget(m_showInBox3Button, 3, 1);
+    layout->addWidget(targetLabel, 0, 0, 1, 2);
+    layout->addWidget(m_showInBox2Button, 1, 0);
+    layout->addWidget(m_showInBox3Button, 1, 1);
+
+    layout->addWidget(m_runButton, 2, 0, 1, 2);
+    layout->addWidget(m_originalButton, 3, 0);
+    layout->addWidget(m_resetButton, 3, 1);
 
     layout->addWidget(m_resetBeforeOpCheck, 4, 0, 1, 2);
 
@@ -415,6 +428,7 @@ void MainWindow::updateParameterVisibility()
     case Operation::Normalization:
     case Operation::GrayscaleConversion:
     case Operation::ChannelHistograms:
+    case Operation::ChannelCumulativeCurves:
         showParameters({});
         break;
     case Operation::Thresholding:
@@ -458,7 +472,7 @@ void MainWindow::openImage()
 void MainWindow::openSecondImage()
 {
     const QString path = QFileDialog::getOpenFileName(
-        this, tr("Open Second Image (for Task 10 - Hybrid)"), QString(),
+        this, tr("Open Second Image (Hybrid)"), QString(),
         tr("Images (*.png *.jpg *.jpeg *.bmp *.tif *.tiff);;All Files (*)"));
     if (path.isEmpty()) {
         return;
@@ -601,6 +615,9 @@ void MainWindow::runCurrentOperation()
     case Operation::ChannelHistograms:
         m_controller->showChannelHistograms();
         break;
+    case Operation::ChannelCumulativeCurves:
+        m_controller->showChannelCumulativeCurves();
+        break;
 
     // Task 9
     case Operation::FrequencyLowPass:
@@ -647,11 +664,9 @@ void MainWindow::showResultInBox2()
     m_resultBox2->setTitle(tr("Box 2  (active)"));
     m_resultBox3->setTitle(tr("Box 3"));
 
-    if (m_lastResult.isNull()) {
-        statusBar()->showMessage(tr("No result yet - run a task first."), 4000);
-    }
-
-    displayResultInActiveBox();
+    // Selection only sets the target - the next "Run Operation" puts its
+    // result here. Nothing is shown until then.
+    statusBar()->showMessage(tr("Next result will go to Box 2."), 4000);
 }
 
 void MainWindow::showResultInBox3()
@@ -663,11 +678,9 @@ void MainWindow::showResultInBox3()
     m_resultBox2->setTitle(tr("Box 2"));
     m_resultBox3->setTitle(tr("Box 3  (active)"));
 
-    if (m_lastResult.isNull()) {
-        statusBar()->showMessage(tr("No result yet - run a task first."), 4000);
-    }
-
-    displayResultInActiveBox();
+    // Selection only sets the target - the next "Run Operation" puts its
+    // result here. Nothing is shown until then.
+    statusBar()->showMessage(tr("Next result will go to Box 3."), 4000);
 }
 
 void MainWindow::displayResultInActiveBox()

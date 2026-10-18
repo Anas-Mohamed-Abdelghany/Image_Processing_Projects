@@ -16,56 +16,7 @@
 
 #include <opencv2/opencv.hpp>
 
-namespace {
-
-// Stamps a short label into the top-left corner so the halves of a
-// side-by-side result stay identifiable.
-void labelResult(cv::Mat& image, const char* text)
-{
-    if (image.empty()) {
-        return;
-    }
-    // The services return single channel 8U plots / gradients; copy to BGR so
-    // the label is legible on both.
-    cv::Mat canvas = (image.channels() == 1) ? cv::Mat() : image;
-    if (image.channels() == 1) {
-        cv::cvtColor(image, canvas, cv::COLOR_GRAY2BGR);
-    }
-
-    const int pad = 6;
-    int baseline = 0;
-    const cv::Size size = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, 0.55, 1, &baseline);
-    cv::rectangle(canvas, cv::Rect(0, 0, size.width + pad * 2, size.height + pad * 2),
-                  cv::Scalar(0, 0, 0), cv::FILLED);
-    cv::putText(canvas, text, cv::Point(pad, size.height + pad),
-                cv::FONT_HERSHEY_SIMPLEX, 0.55, cv::Scalar(255, 255, 255), 1, cv::LINE_AA);
-    image = canvas;
-}
-
-// Puts two result images side by side, falling back to whichever is available.
-cv::Mat concatHorizontal(const cv::Mat& left, const cv::Mat& right)
-{
-    if (left.empty()) {
-        return right;
-    }
-    if (right.empty()) {
-        return left;
-    }
-    // A service that is not implemented yet returns its input unchanged, so
-    // both sides can share the same buffer - avoid drawing the image twice.
-    if (left.data == right.data) {
-        return left;
-    }
-    if (left.rows != right.rows || left.type() != right.type()) {
-        return left;
-    }
-
-    cv::Mat combined;
-    cv::hconcat(left, right, combined);
-    return combined;
-}
-
-} // namespace
+#include <cmath>
 
 ImageProcessorController::ImageProcessorController(QObject* parent)
     : QObject(parent)
@@ -254,28 +205,46 @@ void ImageProcessorController::applyEdges(EdgeMethod method, Direction direction
     if (direction == Direction::Both) {
         // The services only produce one direction at a time (anything that is
         // not Direction::X is treated as Y), so run each operator twice and
-        // put the two hand-written convolutions next to each other.
-        cv::Mat firstHalf;
-        cv::Mat secondHalf;
+        // combine X and Y into a SINGLE magnitude image:
+        //     magnitude = sqrt(Gx^2 + Gy^2)
+        // scaled into 0..255 (Gx and Gy are already abs-clamped to 0..255 by
+        // the service, so the sqrt can reach ~360 and is divided by sqrt(2)).
+        cv::Mat gx;
+        cv::Mat gy;
 
         switch (method) {
         case EdgeMethod::Sobel:
-            firstHalf  = Task3_EdgeDetectionService::sobel(m_currentImage, Direction::X);
-            secondHalf = Task3_EdgeDetectionService::sobel(m_currentImage, Direction::Y);
+            gx = Task3_EdgeDetectionService::sobel(m_currentImage, Direction::X);
+            gy = Task3_EdgeDetectionService::sobel(m_currentImage, Direction::Y);
             break;
         case EdgeMethod::Roberts:
-            firstHalf  = Task3_EdgeDetectionService::roberts(m_currentImage, Direction::X);
-            secondHalf = Task3_EdgeDetectionService::roberts(m_currentImage, Direction::Y);
+            gx = Task3_EdgeDetectionService::roberts(m_currentImage, Direction::X);
+            gy = Task3_EdgeDetectionService::roberts(m_currentImage, Direction::Y);
             break;
         case EdgeMethod::Prewitt:
-            firstHalf  = Task3_EdgeDetectionService::prewitt(m_currentImage, Direction::X);
-            secondHalf = Task3_EdgeDetectionService::prewitt(m_currentImage, Direction::Y);
+            gx = Task3_EdgeDetectionService::prewitt(m_currentImage, Direction::X);
+            gy = Task3_EdgeDetectionService::prewitt(m_currentImage, Direction::Y);
             break;
         }
 
-        labelResult(firstHalf, "X");
-        labelResult(secondHalf, "Y");
-        edges = concatHorizontal(firstHalf, secondHalf);
+        if (gx.empty() || gy.empty() || gx.size() != gy.size() || gx.type() != gy.type()) {
+            edges = gx.empty() ? gy : gx;
+        } else {
+            cv::Mat combined(gx.rows, gx.cols, CV_8UC1);
+            const double invSqrt2 = 1.0 / std::sqrt(2.0);
+            for (int y = 0; y < gx.rows; ++y) {
+                const uchar* px = gx.ptr<uchar>(y);
+                const uchar* py = gy.ptr<uchar>(y);
+                uchar* dst = combined.ptr<uchar>(y);
+                for (int x = 0; x < gx.cols; ++x) {
+                    const double mag =
+                        std::sqrt(static_cast<double>(px[x]) * px[x] +
+                                  static_cast<double>(py[x]) * py[x]) * invSqrt2;
+                    dst[x] = static_cast<uchar>(mag + 0.5);
+                }
+            }
+            edges = combined;
+        }
     }
 
     commit(edges, tr("Task 3 (edge detection)"));
@@ -393,9 +362,20 @@ void ImageProcessorController::showChannelHistograms()
         return;
     }
 
-    const cv::Mat histograms = Task8_ColorTransformationService::drawChannelHistograms(m_currentImage);
-    const cv::Mat curves = Task8_ColorTransformationService::drawChannelCumulativeCurves(m_currentImage);
-    commit(concatHorizontal(histograms, curves), tr("Task 8 (channel histograms)"));
+    commit(Task8_ColorTransformationService::drawChannelHistograms(m_currentImage),
+           tr("Task 8 (channel histograms)"));
+}
+
+void ImageProcessorController::showChannelCumulativeCurves()
+{
+    QString error;
+    if (!InputValidator::isValidImage(m_currentImage, tr("Current image"), &error)) {
+        emit errorOccurred(error);
+        return;
+    }
+
+    commit(Task8_ColorTransformationService::drawChannelCumulativeCurves(m_currentImage),
+           tr("Task 8 (channel cumulative curves)"));
 }
 
 // ---------------------------------------------------------------------------
