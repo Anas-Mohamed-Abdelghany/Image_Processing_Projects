@@ -2,6 +2,7 @@
 
 #include "backend/ImageProcessorController.h"
 #include "services/TaskTypes.h"
+#include "ui/HybridPanel.h"
 #include "ui/ImageDisplayWidget.h"
 
 #include <QCheckBox>
@@ -13,8 +14,10 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QScrollArea>
 #include <QSignalBlocker>
 #include <QSpinBox>
+#include <QStackedWidget>
 #include <QStatusBar>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -80,7 +83,24 @@ void MainWindow::buildUi()
     panelLayout->addWidget(createActionGroup());
     panelLayout->addStretch(1);
 
-    mainLayout->addWidget(previewArea, 1);
+    // The preview area has two pages: the three boxes above, and the hybrid
+    // page that replaces them while "Hybrid Image" is the selected task. The
+    // hybrid page sits in a scroll area so a small window can still reach all
+    // of it, while a large window lets it grow.
+    m_hybridPanel = new HybridPanel(m_controller, central);
+    auto* hybridScroll = new QScrollArea(central);
+    hybridScroll->setWidgetResizable(true);
+    hybridScroll->setFrameShape(QFrame::NoFrame);
+    hybridScroll->setWidget(m_hybridPanel);
+
+    m_previewStack = new QStackedWidget(central);
+    m_previewStack->addWidget(previewArea);   // page 0
+    m_previewStack->addWidget(hybridScroll);  // page 1
+    connect(m_hybridPanel, &HybridPanel::statusMessage, this, [this](const QString& text) {
+        statusBar()->showMessage(text, 6000);
+    });
+
+    mainLayout->addWidget(m_previewStack, 1);
     mainLayout->addWidget(panel, 0);
 
     setCentralWidget(central);
@@ -402,8 +422,10 @@ void MainWindow::updateParameterVisibility()
         break;
     case Operation::FrequencyLowPass:
     case Operation::FrequencyHighPass:
-    case Operation::HybridImage:
         showParameters({QStringLiteral("cutoff")});
+        break;
+    case Operation::HybridImage:
+        showParameters({}); // the hybrid page has its own cutoff per image
         break;
     }
 }
@@ -427,6 +449,8 @@ void MainWindow::openImage()
     m_routeToOriginal = true;
     if (!m_controller->loadImage(path)) {
         m_pendingStatus.clear();
+    } else {
+        m_hybridPanel->setImage1(m_originalBox->image());
     }
     m_routeToOriginal = false;
 }
@@ -441,6 +465,7 @@ void MainWindow::openSecondImage()
     }
 
     if (m_controller->loadSecondImage(path)) {
+        m_hybridPanel->setImage2(m_controller->secondImagePreview());
         statusBar()->showMessage(tr("Second image loaded: %1").arg(path), 4000);
     }
 }
@@ -470,6 +495,12 @@ void MainWindow::runCurrentOperation()
 
     if (op == Operation::ShowOriginal) {
         showOriginal();
+        return;
+    }
+
+    if (op == Operation::HybridImage) {
+        // The hybrid page has its own filter / cutoff controls per image.
+        m_hybridPanel->createHybrid();
         return;
     }
 
@@ -667,6 +698,11 @@ void MainWindow::onTaskSelectionChanged(int index)
 void MainWindow::selectOperation(Operation operation, QComboBox* source)
 {
     m_activeOperation = operation;
+
+    // Hybrid Image gets its own page, every other task the three previews.
+    if (m_previewStack != nullptr) {
+        m_previewStack->setCurrentIndex(operation == Operation::HybridImage ? 1 : 0);
+    }
 
     // Exactly one drop down may show the active task: reset the others back
     // to the placeholder. Signals are blocked so these resets do not come

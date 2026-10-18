@@ -451,6 +451,69 @@ void ImageProcessorController::applyHybridImage(double cutoffRadius)
 }
 
 // ---------------------------------------------------------------------------
+// Hybrid page - one frequency filter per image, then the hybrid
+// ---------------------------------------------------------------------------
+
+QImage ImageProcessorController::previewHybridFilter(int imageNumber, bool highPass, double cutoffRadius)
+{
+    const cv::Mat& source = (imageNumber == 1) ? m_originalImage : m_secondImage;
+    const QString name = (imageNumber == 1) ? tr("Image 1") : tr("Image 2");
+
+    QString error;
+    if (!InputValidator::isValidImage(source, name, &error)) {
+        emit errorOccurred(imageNumber == 1 ? error : error + tr(" Use \"Open Second Image\" first."));
+        return QImage();
+    }
+    if (!InputValidator::isInRange(cutoffRadius, 1, 10000, tr("Cutoff radius"), &error)) {
+        emit errorOccurred(error);
+        return QImage();
+    }
+
+    const cv::Mat filtered = highPass ? Task9_FrequencyFilterService::highPass(source, cutoffRadius)
+                                      : Task9_FrequencyFilterService::lowPass(source, cutoffRadius);
+    if (filtered.empty()) {
+        emit errorOccurred(tr("Task 9 returned no image - the service may not be implemented yet."));
+        return QImage();
+    }
+    return QtCvBridge::toQImage(filtered);
+}
+
+QImage ImageProcessorController::createHybridFromFilters(bool highPass1, double cutoff1,
+                                                         bool highPass2, double cutoff2)
+{
+    QString error;
+    if (!InputValidator::isValidImage(m_originalImage, tr("Image 1"), &error)) {
+        emit errorOccurred(error);
+        return QImage();
+    }
+    if (!InputValidator::isValidImage(m_secondImage, tr("Image 2"), &error)) {
+        emit errorOccurred(error + tr(" Use \"Open Second Image\" first."));
+        return QImage();
+    }
+    if (!InputValidator::isInRange(cutoff1, 1, 10000, tr("Image 1 cutoff"), &error) ||
+        !InputValidator::isInRange(cutoff2, 1, 10000, tr("Image 2 cutoff"), &error)) {
+        emit errorOccurred(error);
+        return QImage();
+    }
+
+    const cv::Mat hybrid = Task10_HybridImageService::createHybridFromFilters(
+        m_originalImage, highPass1, cutoff1, m_secondImage, highPass2, cutoff2);
+    if (hybrid.empty()) {
+        emit errorOccurred(tr("Task 10 (hybrid image) returned no image - the service may not be implemented yet."));
+        return QImage();
+    }
+
+    // Keep it as the current image so "Save Result..." saves the hybrid.
+    m_currentImage = hybrid;
+    return QtCvBridge::toQImage(hybrid);
+}
+
+QImage ImageProcessorController::secondImagePreview() const
+{
+    return m_secondImage.empty() ? QImage() : QtCvBridge::toQImage(m_secondImage);
+}
+
+// ---------------------------------------------------------------------------
 // Internals
 // ---------------------------------------------------------------------------
 

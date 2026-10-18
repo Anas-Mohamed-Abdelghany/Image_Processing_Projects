@@ -4,6 +4,8 @@
 #include <QString>
 #include <QWidget>
 
+class QMouseEvent;
+
 // ----------------------------------------------------------------------------
 // ImageDisplayWidget (ui)
 // Shows the current result image, scaled to fit while keeping the aspect
@@ -46,6 +48,9 @@ public slots:
 
 protected:
     void paintEvent(QPaintEvent* event) override;
+    // Double click opens the image in its own window at 100% size (the
+    // preview is scaled down, which hides fine detail).
+    void mouseDoubleClickEvent(QMouseEvent* event) override;
 
 private:
     void setupSizing();
