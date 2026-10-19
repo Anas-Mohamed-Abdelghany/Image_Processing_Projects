@@ -29,6 +29,7 @@ set(HEADERS
     include/services/Task8_ColorTransformationService.h
     include/services/Task9_FrequencyFilterService.h
     include/services/Task10_HybridImageService.h
+    include/ui/HybridPanel.h
     include/ui/ImageDisplayWidget.h
     include/ui/MainWindow.h
     include/utils/QtCvBridge.h
@@ -52,6 +53,7 @@ set(SOURCES
     src/services/Task8_ColorTransformationService.cpp
     src/services/Task9_FrequencyFilterService.cpp
     src/services/Task10_HybridImageService.cpp
+    src/ui/HybridPanel.cpp
     src/ui/ImageDisplayWidget.cpp
     src/ui/MainWindow.cpp
     src/utils/QtCvBridge.cpp

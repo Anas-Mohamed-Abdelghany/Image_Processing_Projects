@@ -19,4 +19,14 @@ public:
     // cutoffRadius -> shared cut-off of the two frequency filters
     // Implement this by reusing Task9_FrequencyFilterService.
     static cv::Mat createHybrid(const cv::Mat& lowImage, const cv::Mat& highImage, double cutoffRadius);
+
+    // Hybrid with ONE FILTER AND CUTOFF PER IMAGE (used by the hybrid page):
+    // each image is low / high pass filtered with its own cutoff (Task 9), then
+    // the two filtered images are combined:
+    //   low pass  + high pass -> sum of the two          (the classic hybrid)
+    //   low pass  + low pass  -> average of the two
+    //   high pass + high pass -> the two details added on a mid gray background
+    // image2 is fitted to the size of image1. Result: 8 bit, gray or BGR.
+    static cv::Mat createHybridFromFilters(const cv::Mat& image1, bool highPass1, double cutoff1,
+                                           const cv::Mat& image2, bool highPass2, double cutoff2);
 };

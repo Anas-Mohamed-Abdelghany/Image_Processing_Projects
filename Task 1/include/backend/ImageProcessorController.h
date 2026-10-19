@@ -68,7 +68,8 @@ public:
 
     // --- Task 8 -------------------------------------------------------------
     void applyGrayscaleConversion();
-    void showChannelHistograms(); // R/G/B histograms + cumulative curves
+    void showChannelHistograms();      // R/G/B histograms
+    void showChannelCumulativeCurves(); // R/G/B cumulative curves (CDF)
 
     // --- Task 9 -------------------------------------------------------------
     void applyFrequencyLowPass(double cutoffRadius);
@@ -76,6 +77,15 @@ public:
 
     // --- Task 10 ------------------------------------------------------------
     void applyHybridImage(double cutoffRadius);
+
+    // --- Hybrid page (Task 9 + Task 10, one filter per image) -----------------
+    // Used by the hybrid page. They work on the loaded original (image 1) and
+    // the second image (image 2) and RETURN the result instead of emitting
+    // resultReady, so the three result boxes are not disturbed. A null QImage
+    // means failure (errorOccurred was emitted).
+    QImage previewHybridFilter(int imageNumber, bool highPass, double cutoffRadius);
+    QImage createHybridFromFilters(bool highPass1, double cutoff1, bool highPass2, double cutoff2);
+    QImage secondImagePreview() const; // the second image as loaded (null if none)
 
 signals:
     // Emitted whenever a new result image should be displayed.

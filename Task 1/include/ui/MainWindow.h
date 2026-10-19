@@ -15,6 +15,9 @@ class QSpinBox;
 class QDoubleSpinBox;
 class QVBoxLayout;
 
+class QStackedWidget;
+
+class HybridPanel;
 class ImageDisplayWidget;
 class ImageProcessorController;
 
@@ -37,6 +40,11 @@ class ImageProcessorController;
 // "Show Result in Box 2" / "Show Result in Box 3" put the latest result into
 // the chosen box, so two variants of the same task (e.g. Sobel in X and in Y
 // direction) can be compared next to each other and next to the original.
+//
+// While "Hybrid Image" (Task 10) is the selected task the three previews are
+// replaced by the hybrid page (HybridPanel): both input images side by side,
+// one filter + cutoff per image, each filtered image, and the hybrid result.
+// Selecting any other task brings the three previews back.
 //
 // Every button is already connected to ImageProcessorController, which in turn
 // calls the Task 0-10 services. Teammates only implement their service bodies.
@@ -92,6 +100,7 @@ private:
         Thresholding,        // Task 7
         GrayscaleConversion, // Task 8
         ChannelHistograms,   // Task 8
+        ChannelCumulativeCurves, // Task 8
         FrequencyLowPass,    // Task 9
         FrequencyHighPass,   // Task 9
         HybridImage          // Task 10
@@ -119,6 +128,8 @@ private:
 
     // --- core ---------------------------------------------------------------
     ImageDisplayWidget* m_originalBox = nullptr;
+    QStackedWidget* m_previewStack = nullptr; // page 0: the three boxes, page 1: hybrid page
+    HybridPanel* m_hybridPanel = nullptr;
     ImageDisplayWidget* m_resultBox2 = nullptr;
     ImageDisplayWidget* m_resultBox3 = nullptr;
     ImageProcessorController* m_controller = nullptr;

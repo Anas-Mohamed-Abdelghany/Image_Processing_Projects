@@ -1,9 +1,15 @@
 #include "ui/ImageDisplayWidget.h"
 
+#include <QDialog>
 #include <QFont>
+#include <QLabel>
+#include <QMouseEvent>
 #include <QPaintEvent>
 #include <QPainter>
+#include <QPixmap>
+#include <QScrollArea>
 #include <QSizePolicy>
+#include <QVBoxLayout>
 
 // Small box so all three previews fit side by side. The size is capped, not
 // fixed, so the previews still shrink on a smaller window instead of forcing
@@ -14,8 +20,8 @@
 // Keep them small or the right-hand panel is pushed off a 1366x768 screen.
 static const int kMinBoxWidth = 140;
 static const int kMinBoxHeight = 100;
-static const int kMaxBoxWidth = 200;
-static const int kMaxBoxHeight = 150;
+static const int kMaxBoxWidth = 320;
+static const int kMaxBoxHeight = 240;
 
 ImageDisplayWidget::ImageDisplayWidget(QWidget* parent)
     : QWidget(parent)
@@ -74,6 +80,42 @@ void ImageDisplayWidget::clearImage()
     m_image = QImage();
     m_sizeText.clear();
     update();
+}
+
+void ImageDisplayWidget::mouseDoubleClickEvent(QMouseEvent* event)
+{
+    Q_UNUSED(event)
+    if (m_image.isNull()) {
+        return;
+    }
+
+    auto* dialog = new QDialog(this);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+
+    // Draw the pixmap 1:1 in PHYSICAL pixels (the app runs under Windows DPI
+    // scaling), so every pixel of the image is shown without resampling.
+    const qreal ratio = dialog->devicePixelRatioF();
+    QPixmap pixmap = QPixmap::fromImage(m_image);
+    pixmap.setDevicePixelRatio(ratio);
+
+    auto* label = new QLabel(dialog);
+    label->setPixmap(pixmap);
+
+    auto* scroll = new QScrollArea(dialog);
+    scroll->setWidget(label);
+    scroll->setAlignment(Qt::AlignCenter);
+
+    auto* layout = new QVBoxLayout(dialog);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->addWidget(scroll);
+
+    dialog->setWindowTitle(tr("%1 - %2 x %3 px (100%)")
+                               .arg(m_title.simplified())
+                               .arg(m_image.width())
+                               .arg(m_image.height()));
+    dialog->resize(qMin(static_cast<int>(m_image.width() / ratio) + 24, 800),
+                   qMin(static_cast<int>(m_image.height() / ratio) + 24, 520));
+    dialog->show();
 }
 
 void ImageDisplayWidget::paintEvent(QPaintEvent* event)

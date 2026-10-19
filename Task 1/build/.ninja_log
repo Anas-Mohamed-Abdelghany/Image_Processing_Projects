@@ -1,58 +1,37 @@
 # ninja log v7
-16	286	8133570039153560	CV_Assignment_autogen/timestamp	85192438d638caab
-16	286	8133570039153560	CV_Assignment_autogen/mocs_compilation.cpp	85192438d638caab
-16	286	8133570039153560	F:/projects/Image_Processing_Projects/Task 1/build/CV_Assignment_autogen/timestamp	85192438d638caab
-16	286	8133570039153560	F:/projects/Image_Processing_Projects/Task 1/build/CV_Assignment_autogen/mocs_compilation.cpp	85192438d638caab
-4620	7489	8133528583947165	CMakeFiles/CV_Assignment.dir/src/services/Task1_NoiseService.cpp.obj	f2ef8564fb0709fe
-4718	7799	8133528584919731	CMakeFiles/CV_Assignment.dir/src/services/Task2_LowPassFilterService.cpp.obj	2222f5d393aa6cbd
-4820	8258	8133528585946124	CMakeFiles/CV_Assignment.dir/src/services/Task3_EdgeDetectionService.cpp.obj	55d0ef7fbf4b1e2
+21	320	8140527342562575	CV_Assignment_autogen/timestamp	a42e163ee2666820
+21	320	8140527342562575	CV_Assignment_autogen/mocs_compilation.cpp	a42e163ee2666820
+21	320	8140527342562575	F:/projects/Image_Processing_Projects/Task 1/build/CV_Assignment_autogen/timestamp	a42e163ee2666820
+21	320	8140527342562575	F:/projects/Image_Processing_Projects/Task 1/build/CV_Assignment_autogen/mocs_compilation.cpp	a42e163ee2666820
+4864	9758	8140483206610817	CMakeFiles/CV_Assignment.dir/src/services/Task1_NoiseService.cpp.obj	f2ef8564fb0709fe
+4948	9893	8140483207473200	CMakeFiles/CV_Assignment.dir/src/services/Task2_LowPassFilterService.cpp.obj	2222f5d393aa6cbd
+5018	9480	8140483208157956	CMakeFiles/CV_Assignment.dir/src/services/Task3_EdgeDetectionService.cpp.obj	55d0ef7fbf4b1e2
 1438	5186	8133537855406140	CMakeFiles/CV_Assignment.dir/src/services/Task0_ImageIOService.cpp.obj	d86c59801fd1aa34
-1238	5135	8133544710088613	CMakeFiles/CV_Assignment.dir/src/main.cpp.obj	ab73f2e2a556f946
+1883	6485	8140517726460868	CMakeFiles/CV_Assignment.dir/src/main.cpp.obj	ab73f2e2a556f946
 4951	9025	8133528587249775	CMakeFiles/CV_Assignment.dir/src/services/Task4_HistogramService.cpp.obj	6ce2e799ed6ca37e
 5090	8777	8133528588633371	CMakeFiles/CV_Assignment.dir/src/services/Task5_EqualizationService.cpp.obj	df837fbb70fa6549
-5279	8562	8133528590538782	CMakeFiles/CV_Assignment.dir/src/services/Task6_NormalizationService.cpp.obj	c6bed902397edfc2
-1227	6958	8133555688316803	CMakeFiles/CV_Assignment.dir/CV_Assignment_autogen/mocs_compilation.cpp.obj	f999de7929251239
-7490	11124	8133528612642088	CMakeFiles/CV_Assignment.dir/src/services/Task7_ThresholdingService.cpp.obj	3e11fc1756a23a40
-7648	10981	8133528614221271	CMakeFiles/CV_Assignment.dir/src/services/Task8_ColorTransformationService.cpp.obj	95bb5e482efa1df2
-7800	11127	8133528615741140	CMakeFiles/CV_Assignment.dir/src/services/Task9_FrequencyFilterService.cpp.obj	d5a315f946c021a2
-4431	14557	8133528582055601	CMakeFiles/CV_Assignment.dir/src/backend/ImageProcessorController.cpp.obj	e26b09b1b0ce3b06
-8259	11999	8133528620336029	CMakeFiles/CV_Assignment.dir/src/services/Task10_HybridImageService.cpp.obj	9c45a0f63665e4ba
-287	3259	8133570041858445	CMakeFiles/CV_Assignment.dir/src/ui/ImageDisplayWidget.cpp.obj	ebefbc1137a041d8
+5108	9639	8140483209060095	CMakeFiles/CV_Assignment.dir/src/services/Task6_NormalizationService.cpp.obj	c6bed902397edfc2
+1810	7941	8140517725725024	CMakeFiles/CV_Assignment.dir/CV_Assignment_autogen/mocs_compilation.cpp.obj	f999de7929251239
+5193	9294	8140483209916539	CMakeFiles/CV_Assignment.dir/src/services/Task7_ThresholdingService.cpp.obj	3e11fc1756a23a40
+5333	9892	8140483211322949	CMakeFiles/CV_Assignment.dir/src/services/Task8_ColorTransformationService.cpp.obj	95bb5e482efa1df2
+5515	9894	8140483213133924	CMakeFiles/CV_Assignment.dir/src/services/Task9_FrequencyFilterService.cpp.obj	d5a315f946c021a2
+308	4409	8140522048924930	CMakeFiles/CV_Assignment.dir/src/backend/ImageProcessorController.cpp.obj	e26b09b1b0ce3b06
+9294	12498	8140483250927842	CMakeFiles/CV_Assignment.dir/src/services/Task10_HybridImageService.cpp.obj	9c45a0f63665e4ba
+9639	14486	8140483254375277	CMakeFiles/CV_Assignment.dir/src/ui/ImageDisplayWidget.cpp.obj	ebefbc1137a041d8
 9025	13747	8133528628003112	CMakeFiles/CV_Assignment.dir/src/utils/QtCvBridge.cpp.obj	17fe687c15f924ae
 10982	14500	8133528647567987	CMakeFiles/CV_Assignment.dir/src/validation/InputValidator.cpp.obj	5fcb7ee7b710e117
-332	5408	8133565465119142	CMakeFiles/CV_Assignment.dir/src/ui/MainWindow.cpp.obj	dead7cfe46d7d2f3
-3259	4174	8133570071597614	CV_Assignment.exe	ddc7353c3fba35a
-24	305	8133572074440889	CV_Assignment_autogen/timestamp	85192438d638caab
-24	305	8133572074440889	CV_Assignment_autogen/mocs_compilation.cpp	85192438d638caab
-24	305	8133572074440889	F:/projects/Image_Processing_Projects/Task 1/build/CV_Assignment_autogen/timestamp	85192438d638caab
-24	305	8133572074440889	F:/projects/Image_Processing_Projects/Task 1/build/CV_Assignment_autogen/mocs_compilation.cpp	85192438d638caab
-306	3582	8133572077373897	CMakeFiles/CV_Assignment.dir/src/ui/ImageDisplayWidget.cpp.obj	ebefbc1137a041d8
-3582	4502	8133572110153352	CV_Assignment.exe	ddc7353c3fba35a
-17	260	8133574588560864	CV_Assignment_autogen/timestamp	85192438d638caab
-17	260	8133574588560864	CV_Assignment_autogen/mocs_compilation.cpp	85192438d638caab
-17	260	8133574588560864	F:/projects/Image_Processing_Projects/Task 1/build/CV_Assignment_autogen/timestamp	85192438d638caab
-17	260	8133574588560864	F:/projects/Image_Processing_Projects/Task 1/build/CV_Assignment_autogen/mocs_compilation.cpp	85192438d638caab
-261	4402	8133574591004715	CMakeFiles/CV_Assignment.dir/src/ui/MainWindow.cpp.obj	dead7cfe46d7d2f3
-4402	5181	8133574632415330	CV_Assignment.exe	ddc7353c3fba35a
-17	1416	8133579160841296	CV_Assignment_autogen/timestamp	85192438d638caab
-17	1416	8133579160841296	CV_Assignment_autogen/mocs_compilation.cpp	85192438d638caab
-17	1416	8133579160841296	F:/projects/Image_Processing_Projects/Task 1/build/CV_Assignment_autogen/timestamp	85192438d638caab
-17	1416	8133579160841296	F:/projects/Image_Processing_Projects/Task 1/build/CV_Assignment_autogen/mocs_compilation.cpp	85192438d638caab
-1484	5715	8133579162328003	CMakeFiles/CV_Assignment.dir/src/main.cpp.obj	ab73f2e2a556f946
-1417	6868	8133579161657627	CMakeFiles/CV_Assignment.dir/CV_Assignment_autogen/mocs_compilation.cpp.obj	f999de7929251239
-1576	8090	8133579163247048	CMakeFiles/CV_Assignment.dir/src/backend/ImageProcessorController.cpp.obj	e26b09b1b0ce3b06
-1646	8461	8133579163945444	CMakeFiles/CV_Assignment.dir/src/ui/MainWindow.cpp.obj	dead7cfe46d7d2f3
-8462	9659	8133579232106622	CV_Assignment.exe	ddc7353c3fba35a
-17	1166	8133584549206447	CV_Assignment_autogen/timestamp	85192438d638caab
-17	1166	8133584549206447	CV_Assignment_autogen/mocs_compilation.cpp	85192438d638caab
-17	1166	8133584549206447	F:/projects/Image_Processing_Projects/Task 1/build/CV_Assignment_autogen/timestamp	85192438d638caab
-17	1166	8133584549206447	F:/projects/Image_Processing_Projects/Task 1/build/CV_Assignment_autogen/mocs_compilation.cpp	85192438d638caab
-1299	4028	8133584551381750	CMakeFiles/CV_Assignment.dir/src/services/Task3_EdgeDetectionService.cpp.obj	55d0ef7fbf4b1e2
-1167	6617	8133584550058473	CMakeFiles/CV_Assignment.dir/CV_Assignment_autogen/mocs_compilation.cpp.obj	f999de7929251239
-1471	7904	8133584553088671	CMakeFiles/CV_Assignment.dir/src/ui/MainWindow.cpp.obj	dead7cfe46d7d2f3
-19	293	8133585142097072	CV_Assignment_autogen/timestamp	85192438d638caab
-19	293	8133585142097072	CV_Assignment_autogen/mocs_compilation.cpp	85192438d638caab
-19	293	8133585142097072	F:/projects/Image_Processing_Projects/Task 1/build/CV_Assignment_autogen/timestamp	85192438d638caab
-19	293	8133585142097072	F:/projects/Image_Processing_Projects/Task 1/build/CV_Assignment_autogen/mocs_compilation.cpp	85192438d638caab
-294	4496	8133585144829830	CMakeFiles/CV_Assignment.dir/src/backend/ImageProcessorController.cpp.obj	e26b09b1b0ce3b06
-4496	5407	8133585186865881	CV_Assignment.exe	ddc7353c3fba35a
+321	5289	8140527345582062	CMakeFiles/CV_Assignment.dir/src/ui/MainWindow.cpp.obj	dead7cfe46d7d2f3
+5289	6094	8140527395256455	CV_Assignment.exe	72e2d614bba638a1
+2017	8177	8140517727793592	CMakeFiles/CV_Assignment.dir/src/ui/HybridPanel.cpp.obj	b1b4fd84a6afe374
+21	323	8140528213166741	CV_Assignment_autogen/timestamp	a42e163ee2666820
+21	323	8140528213166741	CV_Assignment_autogen/mocs_compilation.cpp	a42e163ee2666820
+21	323	8140528213166741	F:/projects/Image_Processing_Projects/Task 1/build/CV_Assignment_autogen/timestamp	a42e163ee2666820
+21	323	8140528213166741	F:/projects/Image_Processing_Projects/Task 1/build/CV_Assignment_autogen/mocs_compilation.cpp	a42e163ee2666820
+325	4941	8140528216304866	CMakeFiles/CV_Assignment.dir/src/ui/MainWindow.cpp.obj	dead7cfe46d7d2f3
+4941	5774	8140528262466742	CV_Assignment.exe	72e2d614bba638a1
+19	520	8140529347511420	CV_Assignment_autogen/timestamp	a42e163ee2666820
+19	520	8140529347511420	CV_Assignment_autogen/mocs_compilation.cpp	a42e163ee2666820
+19	520	8140529347511420	F:/projects/Image_Processing_Projects/Task 1/build/CV_Assignment_autogen/timestamp	a42e163ee2666820
+19	520	8140529347511420	F:/projects/Image_Processing_Projects/Task 1/build/CV_Assignment_autogen/mocs_compilation.cpp	a42e163ee2666820
+521	5005	8140529352559643	CMakeFiles/CV_Assignment.dir/src/ui/MainWindow.cpp.obj	dead7cfe46d7d2f3
+5005	5862	8140529397394785	CV_Assignment.exe	72e2d614bba638a1
