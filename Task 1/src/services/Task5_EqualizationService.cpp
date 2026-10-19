@@ -7,8 +7,6 @@
 
 // ============================================================================
 // Task 5 - Histogram Equalization
-// Improve contrast by equalizing the histogram (use your Task 4 CDF or
-// cv::equalizeHist).
 // ============================================================================
 
 namespace {
@@ -72,9 +70,6 @@ Histogram computeHistogram(const cv::Mat& gray8)
 //     LUT[i] = round( (cdf(i) - cdfMin) * 255 / (N - cdfMin) )
 // where cdfMin is the first non zero cumulative count. Using cdfMin keeps the
 // darkest gray value at 0 instead of stretching a mostly black image.
-//
-// This is mathematically what cv::equalizeHist does - it is written out here
-// because the assignment requires the CDF built in Task 4 to be used.
 // ---------------------------------------------------------------------------
 cv::Mat equalizeChannel(const cv::Mat& gray8)
 {

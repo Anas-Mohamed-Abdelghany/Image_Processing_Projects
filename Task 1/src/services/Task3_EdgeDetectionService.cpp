@@ -5,18 +5,11 @@
 #include <cmath>
 
 // ============================================================================
-// Task 3 - Edge Detection                                       [TODO: Teammate]
-//
-// CRITICAL RULES:
-//   * Sobel / Roberts / Prewitt: implement the masks MANUALLY and produce the
-//     X and Y directions SEPARATELY (Direction::X / Direction::Y).
-//     Do NOT call cv::Sobel() - build the kernel yourself and convolve.
-//   * Canny: the ONLY place where an OpenCV built-in function is allowed
-//     (cv::Canny).
+// Task 3 - Edge Detection                                  
 // ============================================================================
 
 // ---------------------------------------------------------------------------
-// Manual helpers (plain loops, no OpenCV filtering functions)
+// Manual helpers
 // ---------------------------------------------------------------------------
 
 // Single-channel 8-bit copy of the image (BGR/BGRA -> gray done by hand).

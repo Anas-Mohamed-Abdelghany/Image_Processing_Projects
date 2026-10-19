@@ -8,9 +8,6 @@
 
 // ============================================================================
 // Task 4 - Histograms
-// Draw the histogram AND the distribution curve (CDF) for an image.
-// Return ready-to-display cv::Mat images (the controller shows them side by
-// side in the UI).
 // ============================================================================
 
 namespace {
