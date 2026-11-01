@@ -139,10 +139,14 @@ void MainWindow::setupUI() {
     originalView = new QLabel("Original Image");
     originalView->setAlignment(Qt::AlignCenter);
     originalView->setStyleSheet("border: 1px dashed #555; background-color: #1e1e1e; color: #aaa;");
+    originalView->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);   // <-- add
+    originalView->setMinimumSize(1, 1);                                        // <-- add
 
     resultView = new QLabel("Processed Image");
     resultView->setAlignment(Qt::AlignCenter);
     resultView->setStyleSheet("border: 1px dashed #555; background-color: #1e1e1e; color: #aaa;");
+    resultView->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);     // <-- add
+    resultView->setMinimumSize(1, 1);   
 
     viewportsLayout->addWidget(originalView);
     viewportsLayout->addWidget(resultView);
@@ -200,6 +204,7 @@ void MainWindow::openImage() {
     detectedCircles.clear();
     detectedEllipses.clear();
     currentSnakeContour.clear();
+    edgeMatrix.clear();
 
     snakeCenterXSpin->setValue(loadedImage.width() / 2.0);
     snakeCenterYSpin->setValue(loadedImage.height() / 2.0);
@@ -283,7 +288,7 @@ void MainWindow::runHoughCircles() {
     p.minRadius = circleMinRSpin->value();
     p.maxRadius = circleMaxRSpin->value();
     p.threshold = circleThreshSpin->value();
-    detectedCircles = HoughTransform::detectCircles(edgeMatrix, p);
+    detectedCircles = HoughTransform::detectCircles(grayMatrix, edgeMatrix, p);
     overlayPrimitivesOnImage();
 
     stopLoading();

@@ -13,12 +13,18 @@ public:
     struct CircleParams {
         int minRadius = 15;
         int maxRadius = 60;
-        int threshold = 50;
+        int minVotes = 16;
+        int threshold = 30; // Minimum percentage of the circumference supported by edges.
     };
 
-    // Detect straight lines
-    static std::vector<LineParam> detectLines(const GrayImage& edgeMap, const LineParams& params);
+    static std::vector<LineParam> detectLines(
+        const GrayImage& edgeMap,
+        const LineParams& params
+    );
 
-    // Detect circles
-    static std::vector<CircleParam> detectCircles(const GrayImage& edgeMap, const CircleParams& params);
+    static std::vector<CircleParam> detectCircles(
+        const GrayImage& grayImage,
+        const GrayImage& edgeMap,
+        const CircleParams& params
+    );
 };
