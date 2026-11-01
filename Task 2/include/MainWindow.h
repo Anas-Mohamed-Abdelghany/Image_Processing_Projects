@@ -8,7 +8,7 @@
 #include <QTabWidget>
 #include <QProgressBar>
 #include <QImage>
-
+#include <QCheckBox>   // with the other Qt includes
 #include "Types.h"
 
 class MainWindow : public QMainWindow {
@@ -83,4 +83,5 @@ private:
     QDoubleSpinBox *snakeCenterYSpin;
     QSpinBox *snakeItersSpin;
     QTextEdit *metricsOutputText;
+    QCheckBox *snakeAutoInitCheck;
 };

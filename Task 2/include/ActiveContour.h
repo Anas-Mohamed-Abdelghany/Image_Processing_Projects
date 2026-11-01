@@ -17,7 +17,9 @@ public:
 
     // Initialize circular contour around target object
     static std::vector<Point2D> initCircularContour(Point2D center, double radius, int numPoints);
-
+        // Estimates a circle that encloses the object (assumes an object on a fairly uniform background).
+    // Returns false if no object is found; center/radius are then left untouched.
+    static bool estimateInitialCircle(const GrayImage& img, Point2D& center, double& radius, double margin = 15.0);
     // Evolve the snake using Greedy Algorithm
     static std::vector<Point2D> evolveSnake(
         const GrayImage& originalImage,

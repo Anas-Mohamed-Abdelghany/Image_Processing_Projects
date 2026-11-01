@@ -96,7 +96,7 @@ void MainWindow::setupUI() {
 
     tabWidget->addTab(tabShapes, "Shapes");
 
-    // --- TAB 2: SNAKE ---
+        // --- TAB 2: SNAKE ---
     QWidget *tabSnake = new QWidget();
     QVBoxLayout *snakeLayout = new QVBoxLayout(tabSnake);
 
@@ -115,10 +115,15 @@ void MainWindow::setupUI() {
     snakeGrid->addWidget(new QLabel("Center Y:"), 3, 0); snakeGrid->addWidget(snakeCenterYSpin, 3, 1);
     snakeGrid->addWidget(new QLabel("Iterations:"), 4, 0); snakeGrid->addWidget(snakeItersSpin, 4, 1);
 
+    snakeAutoInitCheck = new QCheckBox("Auto-detect center && radius");
+    snakeAutoInitCheck->setChecked(true);
+    snakeGrid->addWidget(snakeAutoInitCheck, 5, 0, 1, 2);
+
     QPushButton *btnSnake = new QPushButton("Evolve Snake");
     connect(btnSnake, &QPushButton::clicked, this, &MainWindow::runActiveContour);
-    snakeGrid->addWidget(btnSnake, 5, 0, 1, 2);
-    snakeLayout->addWidget(snakeParamBox);
+    snakeGrid->addWidget(btnSnake, 6, 0, 1, 2);
+
+    snakeLayout->addWidget(snakeParamBox);   // <-- THIS WAS MISSING
 
     QGroupBox *metricsBox = new QGroupBox("Contour Metrics");
     QVBoxLayout *metricsLayout = new QVBoxLayout(metricsBox);
@@ -318,7 +323,21 @@ void MainWindow::runActiveContour() {
     cfg.radius = snakeRadiusSpin->value();
     cfg.numPoints = snakePointsSpin->value();
     cfg.maxIterations = snakeItersSpin->value();
-
+    cfg.alpha = 1.0;   // continuity (even spacing)
+    cfg.beta  = 0.3;   // curvature: lower lets it bend into the notches
+    cfg.gamma = 2.5;   // edge attraction: higher hugs the edge harder
+    if (snakeAutoInitCheck->isChecked()) {
+        Point2D c;
+        double r;
+        if (ActiveContour::estimateInitialCircle(grayMatrix, c, r)) {
+            cfg.center = c;
+            cfg.radius = r;
+            snakeCenterXSpin->setValue(c.x);   // show what was used
+            snakeCenterYSpin->setValue(c.y);
+            snakeRadiusSpin->setValue(r);
+        }
+        // if detection fails, the manual values are used
+    }
     std::vector<Point2D> initContour = ActiveContour::initCircularContour(cfg.center, cfg.radius, cfg.numPoints);
     currentSnakeContour = ActiveContour::evolveSnake(grayMatrix, initContour, cfg);
 
