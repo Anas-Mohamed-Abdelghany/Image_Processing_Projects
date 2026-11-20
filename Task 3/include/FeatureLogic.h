@@ -10,7 +10,12 @@
 namespace FeatureDetection {
     // Input: Grayscale image
     // Output: FeatureSet containing keypoints (computationTimeMs should be set)
-    FeatureSet computeHarrisCorners(const cv::Mat &grayscaleImage);
+    // keypointSize : size (px) written into every cv::KeyPoint. SIFT (Task 2) uses
+    //                this as the descriptor patch scale.
+    // maxKeypoints : keep only the N strongest corners; 0 = keep all.
+    FeatureSet computeHarrisCorners(const cv::Mat &grayscaleImage,
+                                    float keypointSize = 6.0f,
+                                    int maxKeypoints = 0);
 }
 
 // =========================================================

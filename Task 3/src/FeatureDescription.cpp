@@ -14,6 +14,14 @@ namespace FeatureDescription {
         
         // Input: data.grayscaleImage (Mat), features.keypoints (std::vector<KeyPoint>)
         // Output: features.descriptors (Mat), features.computationTimeMs (double)
+        //
+        // No extra parameters are needed from Task 1: every keypoint already carries
+        //   .size  -> descriptor patch scale in pixels (set from the UI spin box)
+        //   .angle -> patch orientation (-1 = none assigned by the Harris detector)
+        // cv::SIFT::compute() reads both directly:
+        //   auto sift = cv::SIFT::create();
+        //   sift->compute(data.grayscaleImage, features.keypoints, features.descriptors);
+        // That same keypoint vector is what the matcher (Tasks 3/4) indexes into.
 
         // 1. Create SIFT extractor: cv::xfeatures2d::SIFT::create() or cv::SIFT::create()
         // 2. sift->compute(data.grayscaleImage, features.keypoints, features.descriptors)

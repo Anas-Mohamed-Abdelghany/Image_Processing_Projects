@@ -126,6 +126,39 @@ void TaskManager::setupContent()
     headerLayout->addWidget(lblStatus, 0, Qt::AlignVCenter);
     contentLayout->addLayout(headerLayout);
 
+    // Detection parameters: Task 1 writes them into the keypoints, Task 2 reads them
+    QHBoxLayout *paramsLayout = new QHBoxLayout();
+    paramsLayout->setSpacing(8);
+
+    QLabel *lblParams = new QLabel("Keypoint params", contentWidget);
+    lblParams->setObjectName("paramLabel");
+    paramsLayout->addWidget(lblParams);
+
+    spinKeypointSize = new QDoubleSpinBox(contentWidget);
+    spinKeypointSize->setObjectName("paramSpin");
+    spinKeypointSize->setDecimals(1);
+    spinKeypointSize->setRange(1.0, 64.0);
+    spinKeypointSize->setSingleStep(0.5);
+    spinKeypointSize->setValue(6.0);
+    spinKeypointSize->setSuffix(" px size");
+    spinKeypointSize->setToolTip("Scale written into each Harris keypoint (kp.size).\n"
+                                 "Task 2's SIFT samples its patch with this size,\n"
+                                 "so it changes descriptor scale, not scale invariance.");
+    paramsLayout->addWidget(spinKeypointSize);
+
+    spinMaxKeypoints = new QSpinBox(contentWidget);
+    spinMaxKeypoints->setObjectName("paramSpin");
+    spinMaxKeypoints->setRange(0, 5000);
+    spinMaxKeypoints->setSingleStep(50);
+    spinMaxKeypoints->setValue(0);
+    spinMaxKeypoints->setSpecialValueText("all");
+    spinMaxKeypoints->setSuffix(" keypoints");
+    spinMaxKeypoints->setToolTip("Keep only the N strongest corners (0 = all).\n"
+                                 "This is the length of the keypoint vector Task 2 consumes.");
+    paramsLayout->addWidget(spinMaxKeypoints);
+    paramsLayout->addStretch(1);
+    contentLayout->addLayout(paramsLayout);
+
     // Image display box
     lblImageBox = new QLabel(contentWidget);
     lblImageBox->setObjectName("imageBox");
@@ -249,6 +282,29 @@ void TaskManager::applyStyles()
             font-size: 14px;
         }
 
+        /* ---------- Keypoint parameter controls ---------- */
+        QLabel#paramLabel {
+            color: #8b93a7;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 4px;
+        }
+        QDoubleSpinBox#paramSpin, QSpinBox#paramSpin {
+            background-color: #20242e;
+            color: #dfe5f2;
+            border: 1px solid #2f3546;
+            border-radius: 6px;
+            padding: 4px 6px;
+            min-width: 108px;
+        }
+        QDoubleSpinBox#paramSpin:focus, QSpinBox#paramSpin:focus {
+            border-color: #4f8cff;
+        }
+        QDoubleSpinBox#paramSpin:disabled, QSpinBox#paramSpin:disabled {
+            color: #5b6478;
+            background-color: #1a1d24;
+        }
+
         /* ---------- Results card ---------- */
         QLabel#results {
             background-color: #20242e;
@@ -291,6 +347,8 @@ void TaskManager::setTaskControlsEnabled(bool enabled)
 {
     taskList->setEnabled(enabled);
     btnRun->setEnabled(enabled);
+    spinKeypointSize->setEnabled(enabled);
+    spinMaxKeypoints->setEnabled(enabled);
 }
 
 void TaskManager::updateStatus(const QString &message)
@@ -426,16 +484,23 @@ void TaskManager::runHarrisTask()
     if (!currentImageData.isLoaded) return;
     updateStatus("Running Harris Detector...");
 
+    // Values chosen in the UI -> keypoint size / vector length handed to Task 2
+    const float keypointSize = static_cast<float>(spinKeypointSize->value());
+    const int maxKeypoints = spinMaxKeypoints->value();
+
     QApplication::setOverrideCursor(Qt::WaitCursor);
     // Call logic from FeatureDetection.cpp
-    cachedFeatures = FeatureDetection::computeHarrisCorners(currentImageData.grayscaleImage);
+    cachedFeatures = FeatureDetection::computeHarrisCorners(currentImageData.grayscaleImage,
+                                                            keypointSize,
+                                                            maxKeypoints);
     QApplication::restoreOverrideCursor();
 
     if (!cachedFeatures.isEmpty) {
         overlayKeypoints = true;
         updateStatus("Detection complete.");
-        updateResults(QString("  Corners found: %1      ⏱ %2 ms")
+        updateResults(QString("  Corners found: %1   ·   size %2 px   ⏱ %3 ms")
                       .arg(cachedFeatures.keypoints.size())
+                      .arg(keypointSize, 0, 'f', 1)
                       .arg(cachedFeatures.computationTimeMs, 0, 'f', 2));
     } else {
         overlayKeypoints = false;
@@ -462,8 +527,12 @@ void TaskManager::runSIFTTask()
 
     if (!cachedFeatures.descriptors.empty()) {
         updateStatus("Description complete.");
-        updateResults(QString("  Descriptors: %1      ⏱ %2 ms")
+        const double kpSize = cachedFeatures.keypoints.empty()
+                                  ? 0.0
+                                  : cachedFeatures.keypoints.front().size;
+        updateResults(QString("  Descriptors: %1   ·   keypoint size %2 px   ⏱ %3 ms")
                       .arg(cachedFeatures.descriptors.rows)
+                      .arg(kpSize, 0, 'f', 1)
                       .arg(cachedFeatures.computationTimeMs, 0, 'f', 2));
     } else {
         updateStatus("SIFT Description failed.");

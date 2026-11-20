@@ -117,13 +117,15 @@ namespace {
 
 namespace FeatureDetection {
 
-    FeatureSet computeHarrisCorners(const cv::Mat &grayscaleImage) {
+    FeatureSet computeHarrisCorners(const cv::Mat &grayscaleImage,
+                                    float keypointSize,
+                                    int maxKeypoints) {
         FeatureSet fs;
         fs.keypoints.clear();
         fs.computationTimeMs = 0.0;
         fs.isEmpty = true;
 
-        if (grayscaleImage.empty()) {
+        if (grayscaleImage.empty() || keypointSize <= 0.0f) {
             return fs;
         }
 
@@ -253,8 +255,9 @@ namespace FeatureDetection {
                 if (neighborhoodMax > r) continue;          // not a local maximum
                 if (earlierMax >= r) continue;              // plateau -> keep only first
 
+                // keypointSize comes from the UI (Task 2's SIFT reads kp.size)
                 keypoints.emplace_back(static_cast<float>(x), static_cast<float>(y),
-                                       6.0f, -1.0f, r);
+                                       keypointSize, -1.0f, r);
             }
         }
 
@@ -263,6 +266,11 @@ namespace FeatureDetection {
                   [](const cv::KeyPoint &p1, const cv::KeyPoint &p2) {
                       return p1.response > p2.response;
                   });
+
+        // Optional cap on how many keypoints are handed to Task 2 (0 = all).
+        if (maxKeypoints > 0 && static_cast<int>(keypoints.size()) > maxKeypoints) {
+            keypoints.resize(static_cast<size_t>(maxKeypoints));
+        }
 
         // ---- Stop timing ----
         const auto t1 = std::chrono::steady_clock::now();

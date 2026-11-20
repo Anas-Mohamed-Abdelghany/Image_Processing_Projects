@@ -10,6 +10,8 @@
 #include <QMessageBox>
 #include <QPixmap>
 #include <QResizeEvent>
+#include <QDoubleSpinBox>
+#include <QSpinBox>
 #include "DataStructures.h"
 
 class TaskManager : public QMainWindow
@@ -42,6 +44,10 @@ private:
     QLabel *lblStatus;
     QLabel *lblImageBox;
     QLabel *lblResults;
+
+    // Detection parameters (Task 1) that Task 2 consumes
+    QDoubleSpinBox *spinKeypointSize;
+    QSpinBox *spinMaxKeypoints;
 
     void setupUI();
     void setupSidebar();
