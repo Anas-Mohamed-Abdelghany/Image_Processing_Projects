@@ -130,21 +130,23 @@ void TaskManager::setupContent()
     QHBoxLayout *paramsLayout = new QHBoxLayout();
     paramsLayout->setSpacing(8);
 
-    QLabel *lblParams = new QLabel("Keypoint params", contentWidget);
+    QLabel *lblParams = new QLabel("Scale params", contentWidget);
     lblParams->setObjectName("paramLabel");
     paramsLayout->addWidget(lblParams);
 
-    spinKeypointSize = new QDoubleSpinBox(contentWidget);
-    spinKeypointSize->setObjectName("paramSpin");
-    spinKeypointSize->setDecimals(1);
-    spinKeypointSize->setRange(1.0, 64.0);
-    spinKeypointSize->setSingleStep(0.5);
-    spinKeypointSize->setValue(6.0);
-    spinKeypointSize->setSuffix(" px size");
-    spinKeypointSize->setToolTip("Scale written into each Harris keypoint (kp.size).\n"
-                                 "Task 2's SIFT samples its patch with this size,\n"
-                                 "so it changes descriptor scale, not scale invariance.");
-    paramsLayout->addWidget(spinKeypointSize);
+    spinSigma = new QDoubleSpinBox(contentWidget);
+    spinSigma->setObjectName("paramSpin");
+    spinSigma->setDecimals(1);
+    spinSigma->setRange(0.5, 10.0);
+    spinSigma->setSingleStep(0.5);
+    spinSigma->setValue(1.0);
+    spinSigma->setSuffix(" sigma");
+    spinSigma->setToolTip("Detection scale sigma (px). The image is Gaussian-blurred\n"
+                          "at this sigma before the Harris response is computed,\n"
+                          "and every keypoint gets kp.size = 6 * sigma.\n"
+                          "SIFT (Task 2) samples its descriptor at kp.size, so\n"
+                          "keypoints are described at the scale they were found at.");
+    paramsLayout->addWidget(spinSigma);
 
     spinMaxKeypoints = new QSpinBox(contentWidget);
     spinMaxKeypoints->setObjectName("paramSpin");
@@ -347,7 +349,7 @@ void TaskManager::setTaskControlsEnabled(bool enabled)
 {
     taskList->setEnabled(enabled);
     btnRun->setEnabled(enabled);
-    spinKeypointSize->setEnabled(enabled);
+    spinSigma->setEnabled(enabled);
     spinMaxKeypoints->setEnabled(enabled);
 }
 
@@ -387,8 +389,11 @@ void TaskManager::refreshImageDisplay()
         painter.setPen(pen);
         painter.setBrush(Qt::NoBrush);
 
-        const double r = qMax(5.0, canvas.height() / 90.0);
+        const double fallback = qMax(5.0, canvas.height() / 90.0);
         for (const cv::KeyPoint &kp : cachedFeatures.keypoints) {
+            // Draw at the keypoint's own scale: kp.size is a diameter in
+            // source-image pixels, sx converts it to pixmap pixels.
+            const double r = (kp.size > 0.0f) ? kp.size * 0.5 * sx : fallback;
             painter.drawEllipse(QPointF(kp.pt.x * sx, kp.pt.y * sy), r, r);
         }
     }
@@ -484,23 +489,24 @@ void TaskManager::runHarrisTask()
     if (!currentImageData.isLoaded) return;
     updateStatus("Running Harris Detector...");
 
-    // Values chosen in the UI -> keypoint size / vector length handed to Task 2
-    const float keypointSize = static_cast<float>(spinKeypointSize->value());
+    // Values chosen in the UI -> detection scale / vector length handed to Task 2
+    const float sigma = static_cast<float>(spinSigma->value());
     const int maxKeypoints = spinMaxKeypoints->value();
 
     QApplication::setOverrideCursor(Qt::WaitCursor);
     // Call logic from FeatureDetection.cpp
     cachedFeatures = FeatureDetection::computeHarrisCorners(currentImageData.grayscaleImage,
-                                                            keypointSize,
+                                                            sigma,
                                                             maxKeypoints);
     QApplication::restoreOverrideCursor();
 
     if (!cachedFeatures.isEmpty) {
         overlayKeypoints = true;
         updateStatus("Detection complete.");
-        updateResults(QString("  Corners found: %1   ·   size %2 px   ⏱ %3 ms")
+        updateResults(QString("  Corners found: %1   ·   sigma %2 px -> kp.size %3 px   ⏱ %4 ms")
                       .arg(cachedFeatures.keypoints.size())
-                      .arg(keypointSize, 0, 'f', 1)
+                      .arg(sigma, 0, 'f', 1)
+                      .arg(6.0f * sigma, 0, 'f', 1)
                       .arg(cachedFeatures.computationTimeMs, 0, 'f', 2));
     } else {
         overlayKeypoints = false;
@@ -527,12 +533,19 @@ void TaskManager::runSIFTTask()
 
     if (!cachedFeatures.descriptors.empty()) {
         updateStatus("Description complete.");
-        const double kpSize = cachedFeatures.keypoints.empty()
-                                  ? 0.0
-                                  : cachedFeatures.keypoints.front().size;
-        updateResults(QString("  Descriptors: %1   ·   keypoint size %2 px   ⏱ %3 ms")
+        // Report the scale range SIFT actually sampled at
+        float minSize = cachedFeatures.keypoints.front().size;
+        float maxSize = minSize;
+        for (const cv::KeyPoint &kp : cachedFeatures.keypoints) {
+            minSize = std::min(minSize, kp.size);
+            maxSize = std::max(maxSize, kp.size);
+        }
+        const QString sizeText = (minSize == maxSize)
+            ? QString("%1 px").arg(minSize, 0, 'f', 1)
+            : QString("%1–%2 px").arg(minSize, 0, 'f', 1).arg(maxSize, 0, 'f', 1);
+        updateResults(QString("  Descriptors: %1   ·   sampled at kp.size %2   ⏱ %3 ms")
                       .arg(cachedFeatures.descriptors.rows)
-                      .arg(kpSize, 0, 'f', 1)
+                      .arg(sizeText)
                       .arg(cachedFeatures.computationTimeMs, 0, 'f', 2));
     } else {
         updateStatus("SIFT Description failed.");

@@ -9,9 +9,11 @@
 // --- TEAM MEMBER TASK 1 ---
 // Harris Corner Detection implemented FROM SCRATCH.
 // No OpenCV detection helpers are used: no cv::cornerHarris,
-// no cv::dilate, no cv::threshold, no cv::compare...
-// Everything (gradients, structure tensor, Harris response,
-// thresholding and non-max suppression) is hand-written.
+// no cv::dilate, no cv::threshold, no cv::compare, no
+// cv::GaussianBlur...
+// Everything (scale-space blur, gradients, structure tensor,
+// Harris response, thresholding and non-max suppression) is
+// hand-written.
 // =========================================================
 
 namespace {
@@ -113,19 +115,73 @@ namespace {
         return rows[ys][xs];
     }
 
+    // ------------------------------------------------------------------
+    // Separable Gaussian blur, FROM SCRATCH (no cv::GaussianBlur).
+    //   kernel radius = ceil(3 * sigma)  -> truncates at ~3 sigma
+    //   two passes: horizontal then vertical, replicated borders
+    // ------------------------------------------------------------------
+    void gaussianBlur8(const std::vector<uchar> &src, std::vector<uchar> &dst,
+                       int w, int h, float sigma) {
+        if (sigma <= 0.05f) {          // sigma ~ 0: blur is the identity
+            dst = src;
+            return;
+        }
+
+        // 1) Build the normalized 1-D kernel:  G(x) = exp(-x^2 / (2 sigma^2))
+        const int radius = std::max(1, static_cast<int>(std::ceil(3.0f * sigma)));
+        std::vector<float> kernel(static_cast<size_t>(2 * radius + 1));
+        float sum = 0.0f;
+        for (int i = -radius; i <= radius; ++i) {
+            const float v = std::exp(-(i * i) / (2.0f * sigma * sigma));
+            kernel[static_cast<size_t>(i + radius)] = v;
+            sum += v;
+        }
+        for (float &v : kernel) v /= sum;
+
+        // 2) Horizontal pass: src -> tmp (float keeps the precision)
+        std::vector<float> tmp(static_cast<size_t>(w * h));
+        for (int y = 0; y < h; ++y) {
+            const uchar *srow = src.data() + static_cast<size_t>(y) * w;
+            float *trow = tmp.data() + static_cast<size_t>(y) * w;
+            for (int x = 0; x < w; ++x) {
+                float acc = 0.0f;
+                for (int i = -radius; i <= radius; ++i) {
+                    const int xx = clampIndex(x + i, 0, w - 1);
+                    acc += kernel[static_cast<size_t>(i + radius)] * srow[xx];
+                }
+                trow[x] = acc;
+            }
+        }
+
+        // 3) Vertical pass: tmp -> dst (rounded back to 8-bit)
+        dst.resize(static_cast<size_t>(w * h));
+        for (int y = 0; y < h; ++y) {
+            uchar *drow = dst.data() + static_cast<size_t>(y) * w;
+            for (int x = 0; x < w; ++x) {
+                float acc = 0.0f;
+                for (int i = -radius; i <= radius; ++i) {
+                    const int yy = clampIndex(y + i, 0, h - 1);
+                    acc += kernel[static_cast<size_t>(i + radius)] * tmp[static_cast<size_t>(yy) * w + x];
+                }
+                const int v = static_cast<int>(acc + 0.5f);
+                drow[x] = static_cast<uchar>(clampIndex(v, 0, 255));
+            }
+        }
+    }
+
 } // namespace
 
 namespace FeatureDetection {
 
     FeatureSet computeHarrisCorners(const cv::Mat &grayscaleImage,
-                                    float keypointSize,
+                                    float sigma,
                                     int maxKeypoints) {
         FeatureSet fs;
         fs.keypoints.clear();
         fs.computationTimeMs = 0.0;
         fs.isEmpty = true;
 
-        if (grayscaleImage.empty() || keypointSize <= 0.0f) {
+        if (grayscaleImage.empty() || sigma <= 0.0f || maxKeypoints < 0) {
             return fs;
         }
 
@@ -133,17 +189,33 @@ namespace FeatureDetection {
         const auto t0 = std::chrono::steady_clock::now();
 
         // 1) Grayscale 8-bit image (manual conversion).
-        const cv::Mat gray = convertToGray8(grayscaleImage);
-        const int w = gray.cols;
-        const int h = gray.rows;
+        const cv::Mat gray0 = convertToGray8(grayscaleImage);
+        const int w = gray0.cols;
+        const int h = gray0.rows;
         if (w < 3 || h < 3) {
             return fs; // too small for a 3x3 neighborhood
         }
 
+        // 1b) Scale-space step: blur at sigma BEFORE gradients, so the Harris
+        //     response is computed at the scale the user asked for.
+        //     (hand-written separable Gaussian, not cv::GaussianBlur)
+        std::vector<uchar> flat(static_cast<size_t>(w) * h);
+        for (int y = 0; y < h; ++y) {
+            const uchar *src = gray0.ptr<uchar>(y);
+            std::copy(src, src + w, flat.data() + static_cast<size_t>(y) * w);
+        }
+        std::vector<uchar> blurred;
+        gaussianBlur8(flat, blurred, w, h, sigma);
+
+        // KeyPoint::size: the scale SIFT will sample this corner at.
+        // Heuristic: the main gradient window lives inside ~3 sigma of radius,
+        // i.e. a diameter of 6 sigma.
+        const float keypointSize = 6.0f * sigma;
+
         // Gather row pointers once (replicated border sampling).
         std::vector<const uchar *> rows(h);
         for (int y = 0; y < h; ++y) {
-            rows[y] = gray.ptr<uchar>(y);
+            rows[y] = blurred.data() + static_cast<size_t>(y) * w;
         }
 
         // 2) Sobel gradients Ix, Iy (3x3 kernels, hand-rolled, replicated borders).
@@ -173,15 +245,22 @@ namespace FeatureDetection {
             }
         }
 
-        // 3) Structure tensor M = [[A, C], [C, B]] with a 3x3 box window:
+        // 3) Structure tensor M = [[A, C], [C, B]]:
         //    A = avg(Ix^2), B = avg(Iy^2), C = avg(Ix*Iy)
+        //    The integration window must MATCH the detection scale, otherwise
+        //    large sigma just smears gradients that a fixed 3x3 window can no
+        //    longer integrate (and large corners lose to noise). Window radius
+        //    ~ sigma keeps the tensor tuned to the scale we blurred at.
+        const int winR = std::max(1, static_cast<int>(std::lround(sigma)));
+        const int winN = 2 * winR + 1;
+        const float winInv = 1.0f / static_cast<float>(winN * winN);
         std::vector<float> a(n), b(n), c(n);
         for (int y = 0; y < h; ++y) {
             for (int x = 0; x < w; ++x) {
                 float sa = 0.0f, sb = 0.0f, sc = 0.0f;
-                for (int dy = -1; dy <= 1; ++dy) {
+                for (int dy = -winR; dy <= winR; ++dy) {
                     const int yy = clampIndex(y + dy, 0, h - 1);
-                    for (int dx = -1; dx <= 1; ++dx) {
+                    for (int dx = -winR; dx <= winR; ++dx) {
                         const int xx = clampIndex(x + dx, 0, w - 1);
                         const float gx = ix[yy * w + xx];
                         const float gy = iy[yy * w + xx];
@@ -191,9 +270,9 @@ namespace FeatureDetection {
                     }
                 }
                 const int idx = y * w + x;
-                a[idx] = sa / 9.0f;
-                b[idx] = sb / 9.0f;
-                c[idx] = sc / 9.0f;
+                a[idx] = sa * winInv;
+                b[idx] = sb * winInv;
+                c[idx] = sc * winInv;
             }
         }
 
@@ -255,7 +334,8 @@ namespace FeatureDetection {
                 if (neighborhoodMax > r) continue;          // not a local maximum
                 if (earlierMax >= r) continue;              // plateau -> keep only first
 
-                // keypointSize comes from the UI (Task 2's SIFT reads kp.size)
+                // size = 6 * sigma (the scale this corner was detected at);
+                // Task 2's SIFT reads kp.size as its descriptor patch scale.
                 keypoints.emplace_back(static_cast<float>(x), static_cast<float>(y),
                                        keypointSize, -1.0f, r);
             }

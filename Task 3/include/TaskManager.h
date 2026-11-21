@@ -46,7 +46,7 @@ private:
     QLabel *lblResults;
 
     // Detection parameters (Task 1) that Task 2 consumes
-    QDoubleSpinBox *spinKeypointSize;
+    QDoubleSpinBox *spinSigma;
     QSpinBox *spinMaxKeypoints;
 
     void setupUI();
