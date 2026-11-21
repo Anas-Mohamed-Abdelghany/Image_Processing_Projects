@@ -16,6 +16,7 @@ struct FeatureSet {
     std::vector<cv::KeyPoint> keypoints;
     cv::Mat descriptors;
     double computationTimeMs = 0.0;
+    double descriptionTimeMs = 0.0;
     bool isEmpty = true;
 };
 
