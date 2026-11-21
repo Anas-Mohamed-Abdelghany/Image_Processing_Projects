@@ -30,6 +30,9 @@ namespace FeatureDescription {
     // Input: Full image data (for context), FeatureSet containing keypoints from Task 1
     // Output: Updates the FeatureSet with computed descriptors (computationTimeMs should be updated)
     void computeSIFTDescriptors(const ImageData &data, FeatureSet &features);
+
+    // Bonus/Scale-Invariant Mode: Computes both multi-scale DoG keypoints and SIFT descriptors
+    FeatureSet computeFullSIFT(const ImageData &data);
 }
 
 // =========================================================
