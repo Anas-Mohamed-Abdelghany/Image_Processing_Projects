@@ -12,6 +12,7 @@
 #include <QResizeEvent>
 #include <QDoubleSpinBox>
 #include <QSpinBox>
+#include <QComboBox>
 #include "DataStructures.h"
 
 class TaskManager : public QMainWindow
@@ -48,6 +49,7 @@ private:
     // Detection parameters (Task 1) that Task 2 consumes
     QDoubleSpinBox *spinSigma;
     QSpinBox *spinMaxKeypoints;
+    QComboBox *comboSIFTMode;
 
     void setupUI();
     void setupSidebar();
