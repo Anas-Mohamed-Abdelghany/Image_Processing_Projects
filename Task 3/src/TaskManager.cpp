@@ -158,6 +158,17 @@ void TaskManager::setupContent()
     spinMaxKeypoints->setToolTip("Keep only the N strongest corners (0 = all).\n"
                                  "This is the length of the keypoint vector Task 2 consumes.");
     paramsLayout->addWidget(spinMaxKeypoints);
+
+    comboSIFTMode = new QComboBox(contentWidget);
+    comboSIFTMode->setObjectName("paramCombo");
+    comboSIFTMode->addItem("From Harris Keypoints (Task 1)");
+    comboSIFTMode->addItem("Full SIFT DoG (Scale-Invariant)");
+    comboSIFTMode->setToolTip("Select descriptor input:\n"
+                              "• From Harris Keypoints: Standard Task 2 mode (describes corners from Task 1)\n"
+                              "• Full SIFT DoG: Automatic multi-scale DoG extrema + descriptors");
+    comboSIFTMode->setVisible(false);
+    paramsLayout->addWidget(comboSIFTMode);
+
     paramsLayout->addStretch(1);
     contentLayout->addLayout(paramsLayout);
 
@@ -343,6 +354,11 @@ void TaskManager::updateTaskTitle()
     // Strip the leading "N.  " index for the page title
     const int dot = text.indexOf('.');
     lblTaskTitle->setText(dot >= 0 ? text.mid(dot + 2).trimmed() : text);
+
+    // Show SIFT mode selection only when Task 2 is selected
+    if (comboSIFTMode) {
+        comboSIFTMode->setVisible(row == 1);
+    }
 }
 
 void TaskManager::setTaskControlsEnabled(bool enabled)
@@ -351,6 +367,9 @@ void TaskManager::setTaskControlsEnabled(bool enabled)
     btnRun->setEnabled(enabled);
     spinSigma->setEnabled(enabled);
     spinMaxKeypoints->setEnabled(enabled);
+    if (comboSIFTMode) {
+        comboSIFTMode->setEnabled(enabled);
+    }
 }
 
 void TaskManager::updateStatus(const QString &message)
@@ -519,20 +538,33 @@ void TaskManager::runHarrisTask()
 
 void TaskManager::runSIFTTask()
 {
-    // Check dependency
-    if (!currentImageData.isLoaded || cachedFeatures.isEmpty) {
-        QMessageBox::warning(this, "Dependency", "Please run Task 1 (Detection) first.");
-        return;
-    }
-    updateStatus("Running SIFT Descriptor Generator...");
+    const bool isFullSIFT = (comboSIFTMode && comboSIFTMode->currentIndex() == 1);
 
-    QApplication::setOverrideCursor(Qt::WaitCursor);
-    // Call logic from FeatureDescription.cpp (modifies cachedFeatures in-place)
-    FeatureDescription::computeSIFTDescriptors(currentImageData, cachedFeatures);
-    QApplication::restoreOverrideCursor();
+    if (!isFullSIFT) {
+        // Standard Assignment Mode: check dependency on Task 1
+        if (!currentImageData.isLoaded || cachedFeatures.isEmpty) {
+            QMessageBox::warning(this, "Dependency", "Please run Task 1 (Detection) first.");
+            return;
+        }
+        updateStatus("Running SIFT Descriptor Generator (on Harris Keypoints)...");
+
+        QApplication::setOverrideCursor(Qt::WaitCursor);
+        // Call logic from FeatureDescription.cpp (modifies cachedFeatures in-place)
+        FeatureDescription::computeSIFTDescriptors(currentImageData, cachedFeatures);
+        QApplication::restoreOverrideCursor();
+    } else {
+        // Bonus Scale-Invariant Mode: Full DoG Detector + Descriptor
+        if (!currentImageData.isLoaded) return;
+        updateStatus("Running Full SIFT Pipeline (Scale-Invariant DoG)...");
+
+        QApplication::setOverrideCursor(Qt::WaitCursor);
+        cachedFeatures = FeatureDescription::computeFullSIFT(currentImageData);
+        QApplication::restoreOverrideCursor();
+    }
 
     if (!cachedFeatures.descriptors.empty()) {
-        updateStatus("Description complete.");
+        overlayKeypoints = true;
+        updateStatus(isFullSIFT ? "Full SIFT complete." : "Description complete.");
         // Report the scale range SIFT actually sampled at
         float minSize = cachedFeatures.keypoints.front().size;
         float maxSize = minSize;
@@ -543,14 +575,17 @@ void TaskManager::runSIFTTask()
         const QString sizeText = (minSize == maxSize)
             ? QString("%1 px").arg(minSize, 0, 'f', 1)
             : QString("%1–%2 px").arg(minSize, 0, 'f', 1).arg(maxSize, 0, 'f', 1);
-        updateResults(QString("  Descriptors: %1   ·   sampled at kp.size %2   ⏱ %3 ms")
+        updateResults(QString("  Descriptors: %1   ·   kp.size range: %2   ⏱ %3 ms (%4)")
                       .arg(cachedFeatures.descriptors.rows)
                       .arg(sizeText)
-                      .arg(cachedFeatures.computationTimeMs, 0, 'f', 2));
+                      .arg(cachedFeatures.computationTimeMs, 0, 'f', 2)
+                      .arg(isFullSIFT ? "Full Scale-Invariant DoG" : "Harris Corners"));
     } else {
         updateStatus("SIFT Description failed.");
         updateResults("No descriptors generated.");
     }
+
+    refreshImageDisplay();
 }
 
 void TaskManager::runSSDTask()
