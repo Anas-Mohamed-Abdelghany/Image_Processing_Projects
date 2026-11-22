@@ -159,16 +159,6 @@ void TaskManager::setupContent()
                                  "This is the length of the keypoint vector Task 2 consumes.");
     paramsLayout->addWidget(spinMaxKeypoints);
 
-    comboSIFTMode = new QComboBox(contentWidget);
-    comboSIFTMode->setObjectName("paramCombo");
-    comboSIFTMode->addItem("From Harris Keypoints (Task 1)");
-    comboSIFTMode->addItem("Full SIFT DoG (Scale-Invariant)");
-    comboSIFTMode->setToolTip("Select descriptor input:\n"
-                              "• From Harris Keypoints: Standard Task 2 mode (describes corners from Task 1)\n"
-                              "• Full SIFT DoG: Automatic multi-scale DoG extrema + descriptors");
-    comboSIFTMode->setVisible(false);
-    paramsLayout->addWidget(comboSIFTMode);
-
     paramsLayout->addStretch(1);
     contentLayout->addLayout(paramsLayout);
 
@@ -354,11 +344,6 @@ void TaskManager::updateTaskTitle()
     // Strip the leading "N.  " index for the page title
     const int dot = text.indexOf('.');
     lblTaskTitle->setText(dot >= 0 ? text.mid(dot + 2).trimmed() : text);
-
-    // Show SIFT mode selection only when Task 2 is selected
-    if (comboSIFTMode) {
-        comboSIFTMode->setVisible(row == 1);
-    }
 }
 
 void TaskManager::setTaskControlsEnabled(bool enabled)
@@ -367,9 +352,6 @@ void TaskManager::setTaskControlsEnabled(bool enabled)
     btnRun->setEnabled(enabled);
     spinSigma->setEnabled(enabled);
     spinMaxKeypoints->setEnabled(enabled);
-    if (comboSIFTMode) {
-        comboSIFTMode->setEnabled(enabled);
-    }
 }
 
 void TaskManager::updateStatus(const QString &message)

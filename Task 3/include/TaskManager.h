@@ -49,7 +49,6 @@ private:
     // Detection parameters (Task 1) that Task 2 consumes
     QDoubleSpinBox *spinSigma;
     QSpinBox *spinMaxKeypoints;
-    QComboBox *comboSIFTMode;
 
     void setupUI();
     void setupSidebar();
