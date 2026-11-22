@@ -9,7 +9,7 @@
 #include <cstddef>
 #include <limits>
 #include <vector>
-
+#include <cmath>
 // --- TEAM MEMBER TASKS 3 & 4 ---
 // Implement SSD and NCC Matching here.
 // Task 3 (Member 3): matchSSD is implemented FROM SCRATCH below (plain loops,
@@ -135,22 +135,97 @@ namespace FeatureMatching {
         return matchSSDCore(queryFeatures, trainFeatures, true, ratioThresh);
     }
 
-    MatchResult matchNCC(const FeatureSet &queryFeatures, const FeatureSet &trainFeatures) {
+        // Shared NCC core. Each descriptor is mean-subtracted and divided by its norm,
+    // so NCC(a,b) = dot(a_n, b_n) in [-1, 1]. Higher = better.
+    // distance = 1 - NCC (lower = better, same convention as SSD for sorting/drawMatches).
+    // useRatio=true: keep match only if (1-best) < ratio * (1-second)  (Lowe's test).
+    static MatchResult matchNCCCore(const FeatureSet &queryFeatures,
+                                    const FeatureSet &trainFeatures,
+                                    bool useRatio, float ratioThresh) {
         MatchResult mr;
         mr.method = "NCC";
-        
-        // -- START IMPLEMENTATION (Task 4) --
-        
-        // For NCC using OpenCV, you typically use cv::BFMatcher(cv::NORM_L2, false)
-        // AND ensure your descriptors are normalized, or use cv::NORM_INF.
-        
-        // Temporary placeholder:
         mr.matches.clear();
         mr.matchingTimeMs = 0.0;
-        // mr.isEmpty = false; // Uncomment when implemented
+        mr.isEmpty = true;
 
-        // -- END IMPLEMENTATION --
-        
+        const cv::Mat &queryDesc = queryFeatures.descriptors;
+        const cv::Mat &trainDesc = trainFeatures.descriptors;
+        if (queryDesc.empty() || trainDesc.empty()) return mr;
+        if (queryDesc.cols != trainDesc.cols) return mr;
+
+        const auto t0 = std::chrono::steady_clock::now();
+
+        std::vector<float> q, t;
+        if (!flattenDescriptors(queryDesc, q) || !flattenDescriptors(trainDesc, t)) return mr;
+
+        const int numQuery = queryDesc.rows;
+        const int numTrain = trainDesc.rows;
+        const int dim      = queryDesc.cols;
+
+        // Zero-mean + unit-norm each row in place. Flat descriptors (norm ~ 0) become all zeros -> NCC 0.
+        auto normalizeRows = [dim](std::vector<float> &buf, int rows) {
+            for (int r = 0; r < rows; ++r) {
+                float *p = buf.data() + static_cast<std::size_t>(r) * dim;
+                double mean = 0.0;
+                for (int k = 0; k < dim; ++k) mean += p[k];
+                mean /= dim;
+                double sq = 0.0;
+                for (int k = 0; k < dim; ++k) {
+                    p[k] = static_cast<float>(p[k] - mean);
+                    sq += static_cast<double>(p[k]) * p[k];
+                }
+                const double norm = std::sqrt(sq);
+                if (norm < 1e-12) {
+                    for (int k = 0; k < dim; ++k) p[k] = 0.0f;
+                } else {
+                    for (int k = 0; k < dim; ++k) p[k] = static_cast<float>(p[k] / norm);
+                }
+            }
+        };
+        normalizeRows(q, numQuery);
+        normalizeRows(t, numTrain);
+
+        mr.matches.reserve(static_cast<std::size_t>(numQuery));
+
+        for (int i = 0; i < numQuery; ++i) {
+            const float *qi = q.data() + static_cast<std::size_t>(i) * dim;
+
+            double bestNCC   = -2.0;
+            double secondNCC = -2.0;
+            int bestIdx = -1;
+
+            for (int j = 0; j < numTrain; ++j) {
+                const float *tj = t.data() + static_cast<std::size_t>(j) * dim;
+                double ncc = 0.0;
+                for (int k = 0; k < dim; ++k)
+                    ncc += static_cast<double>(qi[k]) * static_cast<double>(tj[k]);
+
+                if (ncc > bestNCC) { secondNCC = bestNCC; bestNCC = ncc; bestIdx = j; }
+                else if (ncc > secondNCC) { secondNCC = ncc; }
+            }
+
+            if (bestIdx < 0) continue;
+
+            const double bestDist   = 1.0 - bestNCC;
+            const double secondDist = 1.0 - secondNCC;
+            if (useRatio && !(bestDist < static_cast<double>(ratioThresh) * secondDist)) continue;
+
+            mr.matches.emplace_back(i, bestIdx, static_cast<float>(bestDist));
+        }
+
+        const auto t1 = std::chrono::steady_clock::now();
+        mr.matchingTimeMs = std::chrono::duration<double, std::milli>(t1 - t0).count();
+        mr.isEmpty = mr.matches.empty();
         return mr;
+    }
+
+    // Task 4: plain nearest-neighbour NCC.
+    MatchResult matchNCC(const FeatureSet &queryFeatures, const FeatureSet &trainFeatures) {
+        return matchNCCCore(queryFeatures, trainFeatures, false, 1.0f);
+    }
+
+    // Task 4: NCC + ratio test (mirrors the SSD overload).
+    MatchResult matchNCC(const FeatureSet &queryFeatures, const FeatureSet &trainFeatures, float ratioThresh) {
+        return matchNCCCore(queryFeatures, trainFeatures, true, ratioThresh);
     }
 }

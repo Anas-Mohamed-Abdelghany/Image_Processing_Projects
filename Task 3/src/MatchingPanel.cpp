@@ -286,8 +286,8 @@ void MatchingPanel::run()
 
     const bool ssd = ssdActive;
     const float ratio = ratioValue(ssd);
-    lastResult = ssd ? FeatureMatching::matchSSD(feat1, feat2, ratio)   // SSD + Lowe's ratio test
-                     : FeatureMatching::matchNCC(feat1, feat2);          // Task 4
+        lastResult = ssd ? FeatureMatching::matchSSD(feat1, feat2, ratio)   // SSD + Lowe's ratio test
+                         : FeatureMatching::matchNCC(feat1, feat2, ratio);  // NCC + Lowe's ratio test
     haveResult = !lastResult.matches.empty();
 
     QApplication::restoreOverrideCursor();
@@ -304,14 +304,12 @@ void MatchingPanel::run()
         setResultsText(QString("%1\n%2%3: %4 matches\nMatching time: %5 ms")
                            .arg(siftText)
                            .arg(QString(ssd ? "SSD" : "NCC"))
-                           .arg(ssd ? QString(" (ratio %1)").arg(ratio, 0, 'f', 2) : QString())
+                           .arg(QString(" (ratio %1)").arg(ratio, 0, 'f', 2))
                            .arg(lastResult.matches.size())
                            .arg(lastResult.matchingTimeMs, 0, 'f', 3));
         emit statusMessage(QString("Matching complete: %1 matches.").arg(lastResult.matches.size()));
-    } else if (ssd) {
-        setResultsText(siftText + "\nNo matches pass the ratio test. Try a larger ratio.");
-        emit statusMessage("No matches found.");
-    } else {
+    } 
+     else {
         setResultsText(siftText + "\nNCC returned no matches (NCC is Task 4 and may not be implemented yet).");
         emit statusMessage("No matches found.");
     }

@@ -45,6 +45,8 @@ namespace FeatureMatching {
 
     // Task 4: NCC Matching
     MatchResult matchNCC(const FeatureSet &queryFeatures, const FeatureSet &trainFeatures);
+        
+    MatchResult matchNCC(const FeatureSet &queryFeatures, const FeatureSet &trainFeatures, float ratioThresh);
 }
 
 #endif // FEATURELOGIC_H
