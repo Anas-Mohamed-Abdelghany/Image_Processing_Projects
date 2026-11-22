@@ -208,7 +208,8 @@ namespace FeatureMatching {
 
             const double bestDist   = 1.0 - bestNCC;
             const double secondDist = 1.0 - secondNCC;
-            if (useRatio && !(bestDist < static_cast<double>(ratioThresh) * secondDist)) continue;
+            const double r2 = static_cast<double>(ratioThresh) * static_cast<double>(ratioThresh);
+            if (useRatio && !(bestDist < r2 * secondDist)) continue;
 
             mr.matches.emplace_back(i, bestIdx, static_cast<float>(bestDist));
         }
