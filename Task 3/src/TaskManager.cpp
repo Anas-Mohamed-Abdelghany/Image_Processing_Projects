@@ -31,6 +31,11 @@ void TaskManager::setupUI()
     centralWidget->setObjectName("root");
     this->setCentralWidget(centralWidget);
 
+    // Constant minimum window size. Switching between the normal view and the matching view
+    // changes the layout's minimum size; on Windows that can re-size a maximized window so its
+    // bottom (Run Task, results card) ends up below the taskbar. A fixed minimum avoids it.
+    centralWidget->setMinimumSize(900, 580);
+
     mainLayout = new QHBoxLayout(centralWidget);
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(0);
