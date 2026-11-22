@@ -39,6 +39,10 @@ namespace FeatureMatching {
     // Task 3: SSD Matching
     MatchResult matchSSD(const FeatureSet &queryFeatures, const FeatureSet &trainFeatures);
 
+    // Task 3: SSD + Lowe's ratio test. Keeps a match only if bestSSD < ratio^2 * secondBestSSD
+    // (smaller ratio = stricter). Used by the two-image Feature Matching window.
+    MatchResult matchSSD(const FeatureSet &queryFeatures, const FeatureSet &trainFeatures, float ratioThresh);
+
     // Task 4: NCC Matching
     MatchResult matchNCC(const FeatureSet &queryFeatures, const FeatureSet &trainFeatures);
 }

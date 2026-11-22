@@ -25,7 +25,9 @@ set(PROJECT_SOURCES
     include/TaskManager.h
     include/FeatureLogic.h
     include/DataStructures.h
+    include/MatchingPanel.h
     src/TaskManager.cpp
+    src/MatchingPanel.cpp
     src/FeatureDetection.cpp
     src/FeatureDescription.cpp
     src/FeatureMatching.cpp

@@ -15,6 +15,8 @@
 #include <QComboBox>
 #include "DataStructures.h"
 
+class MatchingPanel;   // two-image matching view (MatchingPanel.h)
+
 class TaskManager : public QMainWindow
 {
     Q_OBJECT
@@ -45,6 +47,7 @@ private:
     QLabel *lblStatus;
     QLabel *lblImageBox;
     QLabel *lblResults;
+    MatchingPanel *matchingPanel = nullptr;
 
     // Detection parameters (Task 1) that Task 2 consumes
     QDoubleSpinBox *spinSigma;
@@ -62,6 +65,8 @@ private:
     void updateResults(const QString &message);
     void setTaskControlsEnabled(bool enabled);
     void runSelectedTask();
+    void setupMatchingUI();      // tasks 3 & 4: two-image panel + its sidebar controls
+    void updateMatchingView();   // switch between the normal view and the matching view
 
     // Image loading
     bool loadSelectedImage(const QString &filePath);

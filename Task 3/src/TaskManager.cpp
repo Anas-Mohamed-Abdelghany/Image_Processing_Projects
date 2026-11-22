@@ -1,5 +1,6 @@
 #include "TaskManager.h"
 #include "FeatureLogic.h" // Include the combined header
+#include "MatchingPanel.h"
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QDebug>
@@ -36,6 +37,7 @@ void TaskManager::setupUI()
 
     setupSidebar();
     setupContent();
+    setupMatchingUI();
 
     mainLayout->addWidget(sidebar);
     mainLayout->addWidget(contentWidget, 1);
@@ -45,6 +47,7 @@ void TaskManager::setupUI()
     connect(btnRun, &QPushButton::clicked, this, &TaskManager::runSelectedTask);
     connect(taskList, &QListWidget::currentRowChanged, this, [this](int) {
         updateTaskTitle();
+        updateMatchingView();
     });
 
     // Sidebar starts locked until an image is loaded
@@ -437,6 +440,7 @@ void TaskManager::onLoadImageClicked()
         overlayKeypoints = false;
 
         refreshImageDisplay();
+        updateMatchingView();
     }
 }
 
@@ -470,13 +474,76 @@ bool TaskManager::loadSelectedImage(const QString &filePath)
 // Task dispatch
 // =========================================================
 
+void TaskManager::setupMatchingUI()
+{
+    // Two-image view for tasks 3 & 4 (replaces the single image box while active)
+    matchingPanel = new MatchingPanel(contentWidget);
+    matchingPanel->hide();
+    contentLayout->addWidget(matchingPanel, 1);
+    connect(matchingPanel, &MatchingPanel::statusMessage, this, &TaskManager::updateStatus);
+
+    // "Load Second Image..." directly under "Load Image..."
+    sidebarLayout->insertWidget(sidebarLayout->indexOf(btnLoadImage) + 1,
+                                matchingPanel->loadSecondButton(sidebar));
+
+    // The SSD / NCC tabs keep their normal look; their ratio slider is added below the tab,
+    // on the dark sidebar background, while the tab is selected.
+    taskList->setItemDelegate(new MatchTabDelegate(taskList));
+    for (int row : {2, 3})
+        taskList->setItemWidget(taskList->item(row), matchingPanel->ratioWidget(row == 2, taskList));
+
+    // Matching results below "Run Task"
+    sidebarLayout->addWidget(matchingPanel->resultsLabel(sidebar));
+    matchingPanel->setSidebarWidgetsVisible(false);
+}
+
+void TaskManager::updateMatchingView()
+{
+    const int row = taskList->currentRow();
+    const bool matching = (row == 2 || row == 3);
+
+    // Matching tasks use the two-image panel instead of the single image box
+    lblImageBox->setVisible(!matching);
+    lblResults->setVisible(!matching);
+    spinSigma->setVisible(!matching);
+    spinMaxKeypoints->setVisible(!matching);
+    if (QLabel *paramLabel = contentWidget->findChild<QLabel *>("paramLabel"))
+        paramLabel->setVisible(!matching);
+    matchingPanel->setVisible(matching);
+    matchingPanel->setSidebarWidgetsVisible(matching);
+
+    // The ratio slider appears right below the selected SSD / NCC tab
+    for (int r = 2; r <= 3; ++r) {
+        const bool selected = (r == row);
+        matchingPanel->showRatio(r == 2, selected);
+        taskList->item(r)->setSizeHint(
+            QSize(0, selected ? MatchTabDelegate::tabHeight() + MatchingPanel::ratioPanelHeight()
+                     : MatchTabDelegate::tabHeight()));
+    }
+
+    // Never leave a status from another task on screen (e.g. "Matching complete" on Harris)
+    const QString name = currentImageData.isLoaded
+        ? QFileInfo(QString::fromStdString(currentImageData.filePath)).fileName() : QString();
+    if (matching) {
+        updateStatus("Load the second image, then press Run Task.");
+        matchingPanel->setFirstImage(currentImageData);   // Image 1 = image loaded in the sidebar
+        matchingPanel->setMethod(row == 2);
+    } else {
+        updateStatus(name.isEmpty() ? QString("Load an image to begin.") : "Loaded: " + name);
+        refreshImageDisplay();
+    }
+}
+
 void TaskManager::runSelectedTask()
 {
     switch (taskList->currentRow()) {
         case 0: runHarrisTask(); break;
         case 1: runSIFTTask();   break;
-        case 2: runSSDTask();    break;
-        case 3: runNCCTask();    break;
+        case 2:
+        case 3: matchingPanel->setFirstImage(currentImageData);
+                matchingPanel->setMethod(taskList->currentRow() == 2);
+                matchingPanel->run();     // tasks 3 & 4: two-image matching (SSD / NCC)
+                break;
         default: break;
     }
 }
