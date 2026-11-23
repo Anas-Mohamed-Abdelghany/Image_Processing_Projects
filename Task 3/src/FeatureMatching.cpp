@@ -164,6 +164,7 @@ namespace FeatureMatching {
 
         // Zero-mean + unit-norm each row in place. Flat descriptors (norm ~ 0) become all zeros -> NCC 0.
         auto normalizeRows = [dim](std::vector<float> &buf, int rows) {
+            // For each row, subtract the mean and divide by the norm. If the norm is too small, set the row to all zeros.
             for (int r = 0; r < rows; ++r) {
                 float *p = buf.data() + static_cast<std::size_t>(r) * dim;
                 double mean = 0.0;
@@ -174,6 +175,7 @@ namespace FeatureMatching {
                     p[k] = static_cast<float>(p[k] - mean);
                     sq += static_cast<double>(p[k]) * p[k];
                 }
+                // Normalize to unit length (NCC = dot product of normalized vectors). If the
                 const double norm = std::sqrt(sq);
                 if (norm < 1e-12) {
                     for (int k = 0; k < dim; ++k) p[k] = 0.0f;
@@ -186,14 +188,14 @@ namespace FeatureMatching {
         normalizeRows(t, numTrain);
 
         mr.matches.reserve(static_cast<std::size_t>(numQuery));
-
+        // For each query descriptor, find the best and second-best NCC match in the train set.
         for (int i = 0; i < numQuery; ++i) {
             const float *qi = q.data() + static_cast<std::size_t>(i) * dim;
 
             double bestNCC   = -2.0;
             double secondNCC = -2.0;
             int bestIdx = -1;
-
+            // For each train descriptor, compute the NCC (dot product of normalized vectors) and keep track of the best and second-best matches.
             for (int j = 0; j < numTrain; ++j) {
                 const float *tj = t.data() + static_cast<std::size_t>(j) * dim;
                 double ncc = 0.0;
@@ -208,6 +210,7 @@ namespace FeatureMatching {
 
             const double bestDist   = 1.0 - bestNCC;
             const double secondDist = 1.0 - secondNCC;
+            // Lowe's ratio test: keep the match only if best < ratio * second (lower = better).
             const double r2 = static_cast<double>(ratioThresh) * static_cast<double>(ratioThresh);
             if (useRatio && !(bestDist < r2 * secondDist)) continue;
 
